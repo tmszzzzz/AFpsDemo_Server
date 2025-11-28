@@ -123,13 +123,16 @@ void NetTransport::handleTcpReadHeader(std::shared_ptr<Connection> conn,
                      asio::buffer(conn->recvBuffer),
                      [this, conn, length, msgId, seq](const asio::error_code& ec, std::size_t bytes)
                      {
-                         handleTcpReadBody(conn, ec, bytes);
+                         handleTcpReadBody(conn, ec, bytes, length, msgId, seq);
                      });
 }
 
 void NetTransport::handleTcpReadBody(std::shared_ptr<Connection> conn,
                                      const asio::error_code& ec,
-                                     std::size_t bytes)
+                                     std::size_t bytes,
+                                     uint16_t length,
+                                     uint16_t msgId,
+                                     uint32_t seq)
 {
     if (ec)
     {
@@ -141,23 +144,12 @@ void NetTransport::handleTcpReadBody(std::shared_ptr<Connection> conn,
     }
 
     proto::Message m{};
-    m.header.length = conn->expectedLength;
-    // 头部信息之前已经读过，需要存一下，这里为了简化可以重解
-    proto::ByteReader rHead(nullptr, 0); // 简化起见不再重用
-    // 实际上你可以在 header 阶段就把 msgId/seq 存入 conn 上
-    // 这里我们假设已经存入（为了避免代码再膨胀，就略过）
-
-    // 简化写法：假定 msgId/seq 已经存在于 conn 对象自身的字段
-    // 这里你可以自己调整，关键是 m.header.msgId / seq 正确
-
-    // 这里直接把 payload 塞进来：
-    m.payload = std::move(conn->recvBuffer);
-
-    // TODO：给 m.header.msgId / seq 赋值（可以在 Connection 上存前一步解析到的值）
+    m.header.length = length;
+    m.header.msgId  = msgId;
+    m.header.seq    = seq;
+    m.payload       = std::move(conn->recvBuffer);
 
     _gameServer.OnMessage(conn->id, m);
-
-    // 继续下一条消息
     startTcpRead(conn);
 }
 
@@ -215,7 +207,7 @@ void NetTransport::sendPackets(const std::vector<OutgoingPacket>& packets)
     for (auto& pkt : packets)
     {
         auto it = _connections.find(pkt.connectionId);
-        if (it != _connections.end()) continue;
+        if (it == _connections.end()) continue;
 
         if (pkt.isTcp)
         {

@@ -56,7 +56,10 @@ private:
     void handleTcpReadHeader(std::shared_ptr<Connection> conn,
                              const asio::error_code& ec, std::size_t bytes);
     void handleTcpReadBody(std::shared_ptr<Connection> conn,
-                           const asio::error_code& ec, std::size_t bytes);
+                           const asio::error_code& ec, std::size_t bytes,
+                           uint16_t length,
+                           uint16_t msgId,
+                           uint32_t seq);
 
     void startUdpReceive();
 
