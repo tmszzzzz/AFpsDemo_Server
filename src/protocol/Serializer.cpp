@@ -162,5 +162,22 @@ namespace proto
         if (!r.readU32(out.serverTime)) return false;
         return r.eof() || true;
     }
+
+    void EncodeUdpBind(const UdpBind& msg, Message& out)
+    {
+        out.payload.clear();
+        FillHeader(out, MsgId::UdpBind);
+        ByteWriter w(out.payload);
+        w.writeU32(msg.playerId);
+        out.header.length = static_cast<uint16_t>(sizeof(MsgHeader) + out.payload.size());
+    }
+
+    bool DecodeUdpBind(const Message& msg, UdpBind& out)
+    {
+        ByteReader r(msg.payload.data(), msg.payload.size());
+        if (!r.readU32(out.playerId)) return false;
+        return true;
+    }
+
 }
 

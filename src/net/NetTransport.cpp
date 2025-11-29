@@ -187,13 +187,45 @@ void NetTransport::startUdpReceive()
                                          buf->data() + sizeof(proto::MsgHeader) + payloadSize);
                     }
 
-                    // 简化的：把这个 UDP endpoint 暂时绑到一个“默认 connId”
-                    // 实际上，你应该在 JoinAccept 之后，让客户端通过 TCP 告诉服务器自己的 connId
-                    // 这里先假定 1 号客户端
-                    uint32_t connId = 1;
-                    _udpEndpoints[connId] = *sender;
+                    using proto::MsgId;
+                    MsgId id = static_cast<MsgId>(msgId);
 
-                    _gameServer.OnMessage(connId, m);
+                    if (id == MsgId::UdpBind)
+                    {
+                        // UDP 绑定消息：payload 中带 playerId
+                        proto::UdpBind bind{};
+                        if (proto::DecodeUdpBind(m, bind))
+                        {
+                            uint32_t connId = 0;
+                            if (_gameServer.FindConnIdByPlayerId(bind.playerId, connId))
+                            {
+                                _udpEndpoints[connId]    = *sender;
+                                _endpointToConn[*sender] = connId;
+                                std::cout << "UdpBind playerId=" << bind.playerId
+                                          << " -> connId=" << connId << "\n";
+                            }
+                            else
+                            {
+                                std::cout << "UdpBind with unknown playerId="
+                                          << bind.playerId << "\n";
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // 普通 UDP 消息：通过 endpoint 反查 connId
+                        auto it = _endpointToConn.find(*sender);
+                        if (it != _endpointToConn.end())
+                        {
+                            uint32_t connId = it->second;
+                            _gameServer.OnMessage(connId, m);
+                        }
+                        else
+                        {
+                            std::cout << "UDP msg from unknown endpoint, msgId="
+                                      << msgId << " bytes=" << bytes << "\n";
+                        }
+                    }
                 }
 
                 // 继续收

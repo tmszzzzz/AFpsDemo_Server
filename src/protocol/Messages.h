@@ -18,6 +18,7 @@ namespace proto
         JoinAccept  = 2,
         Ping        = 10,
         Pong        = 11,
+        UdpBind     = 20,
     };
 
     // 统一消息头（用于 TCP/UDP）
@@ -53,6 +54,12 @@ namespace proto
     {
         uint32_t clientTime; // 原样返回
         uint32_t serverTime; // 服务器时间戳/计数
+    };
+
+    // UdpBind: C -> S
+    struct UdpBind
+    {
+        uint32_t playerId; // 希望绑定到 UDP 通道的玩家 ID
     };
 
     // 泛型消息包装

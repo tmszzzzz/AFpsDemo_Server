@@ -59,6 +59,9 @@ namespace proto
 
     void EncodePong(const Pong& msg, Message& out);
     bool DecodePong(const Message& msg, Pong& out);
+
+    void EncodeUdpBind(const UdpBind& msg, Message& out);
+    bool DecodeUdpBind(const Message& msg, UdpBind& out);
 }
 
 

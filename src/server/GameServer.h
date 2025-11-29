@@ -36,6 +36,9 @@ public:
     // 连接关闭时通知
     void OnConnectionClosed(uint32_t connectionId);
 
+    // 用playerId反查connId
+    bool FindConnIdByPlayerId(uint32_t playerId, uint32_t& outConnId) const;
+
 private:
     struct ClientInfo
     {

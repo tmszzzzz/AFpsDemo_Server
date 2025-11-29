@@ -48,6 +48,25 @@ private:
     // UDP 端：connectionId -> endpoint
     std::unordered_map<uint32_t, asio::ip::udp::endpoint> _udpEndpoints;
 
+    struct UdpEndpointHash
+    {
+        std::size_t operator()(const asio::ip::udp::endpoint& ep) const noexcept
+        {
+            try
+            {
+                auto addr = ep.address().to_string();
+                auto port = std::to_string(ep.port());
+                return std::hash<std::string>()(addr + ":" + port);
+            }
+            catch (...)
+            {
+                return 0;
+            }
+        }
+    };
+
+    std::unordered_map<asio::ip::udp::endpoint, uint32_t, UdpEndpointHash> _endpointToConn;
+
     void doAccept();
     void onAccepted(std::shared_ptr<Connection> conn,
                     const asio::error_code& ec);

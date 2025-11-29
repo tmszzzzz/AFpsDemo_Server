@@ -133,3 +133,19 @@ void GameServer::handlePing(uint32_t connectionId, const proto::Message& msg)
 
     _outgoing.push_back(std::move(pkt));
 }
+
+bool GameServer::FindConnIdByPlayerId(uint32_t playerId, uint32_t& outConnId) const
+{
+    for (const auto& kv : _clients)
+    {
+        uint32_t connId = kv.first;
+        const ClientInfo& info = kv.second;
+        if (info.playerId == playerId)
+        {
+            outConnId = connId;
+            return true;
+        }
+    }
+    return false;
+}
+
