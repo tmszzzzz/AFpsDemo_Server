@@ -34,6 +34,13 @@ namespace proto
         _buf.insert(_buf.end(), s.begin(), s.end());
     }
 
+    void ByteWriter::writeF32(float v)
+    {
+        uint32_t bits = 0;
+        std::memcpy(&bits, &v, sizeof(float));
+        writeU32(bits); // 继续复用小端的 writeU32
+    }
+
     // 小端读取
     bool ByteReader::readU8(uint8_t& v)
     {
@@ -72,26 +79,21 @@ namespace proto
         return true;
     }
 
+    bool ByteReader::readF32(float& v)
+    {
+        uint32_t bits = 0;
+        if (!readU32(bits))
+            return false;
+        std::memcpy(&v, &bits, sizeof(float));
+        return true;
+    }
+
     // 通用：填 header.length / msgId / seq
     static void FillHeader(Message& m, MsgId id, uint32_t seq = 0)
     {
         m.header.msgId = static_cast<uint16_t>(id);
         m.header.seq   = seq;
         // length 在 payload 写完后设置
-    }
-
-    // JoinRequest
-    void EncodeJoinRequest(const JoinRequest& msg, Message& out)
-    {
-        out.payload.clear();
-        FillHeader(out, MsgId::JoinRequest);
-        ByteWriter w(out.payload);
-        w.writeU16(msg.protocolVersion);
-        w.writeString(msg.playerName);
-
-        out.header.length = static_cast<uint16_t>(
-                sizeof(MsgHeader) + out.payload.size()
-        );
     }
 
     bool DecodeJoinRequest(const Message& msg, JoinRequest& out)
@@ -110,26 +112,6 @@ namespace proto
         ByteWriter w(out.payload);
         w.writeU32(msg.playerId);
         w.writeU16(msg.serverProtocolVersion);
-        out.header.length = static_cast<uint16_t>(
-                sizeof(MsgHeader) + out.payload.size()
-        );
-    }
-
-    bool DecodeJoinAccept(const Message& msg, JoinAccept& out)
-    {
-        ByteReader r(msg.payload.data(), msg.payload.size());
-        if (!r.readU32(out.playerId))               return false;
-        if (!r.readU16(out.serverProtocolVersion))  return false;
-        return r.eof() || true;
-    }
-
-    // Ping
-    void EncodePing(const Ping& msg, Message& out)
-    {
-        out.payload.clear();
-        FillHeader(out, MsgId::Ping);
-        ByteWriter w(out.payload);
-        w.writeU32(msg.clientTime);
         out.header.length = static_cast<uint16_t>(
                 sizeof(MsgHeader) + out.payload.size()
         );
@@ -155,28 +137,90 @@ namespace proto
         );
     }
 
-    bool DecodePong(const Message& msg, Pong& out)
-    {
-        ByteReader r(msg.payload.data(), msg.payload.size());
-        if (!r.readU32(out.clientTime)) return false;
-        if (!r.readU32(out.serverTime)) return false;
-        return r.eof() || true;
-    }
-
-    void EncodeUdpBind(const UdpBind& msg, Message& out)
-    {
-        out.payload.clear();
-        FillHeader(out, MsgId::UdpBind);
-        ByteWriter w(out.payload);
-        w.writeU32(msg.playerId);
-        out.header.length = static_cast<uint16_t>(sizeof(MsgHeader) + out.payload.size());
-    }
-
     bool DecodeUdpBind(const Message& msg, UdpBind& out)
     {
         ByteReader r(msg.payload.data(), msg.payload.size());
         if (!r.readU32(out.playerId)) return false;
         return true;
+    }
+
+    bool DecodeInputCommand(const Message& msg, InputCommand& out)
+    {
+        ByteReader r(msg.payload.data(), msg.payload.size());
+
+        if (!r.readU32(out.playerId))   return false;
+        if (!r.readU16(out.seq))        return false;
+        if (!r.readU32(out.clientTick)) return false;
+        if (!r.readF32(out.moveX))      return false;
+        if (!r.readF32(out.moveY))      return false;
+        if (!r.readF32(out.yaw))        return false;
+        if (!r.readF32(out.pitch))      return false;
+        if (!r.readU32(out.buttonMask)) return false;
+        return true;
+    }
+
+    void EncodeWorldSnapshot(const WorldSnapshot& msg, Message& out)
+    {
+        out.payload.clear();
+        FillHeader(out, MsgId::WorldSnapshot);
+
+        ByteWriter w(out.payload);
+
+        // serverTick
+        w.writeU32(msg.serverTick);
+
+        // playerCount
+        uint16_t count = static_cast<uint16_t>(msg.players.size());
+        w.writeU16(count);
+
+        for (uint16_t i = 0; i < count; ++i)
+        {
+            const auto& p = msg.players[i];
+
+            w.writeU32(p.playerId);
+            w.writeU32(p.heroId);
+
+            w.writeF32(p.posX);
+            w.writeF32(p.posY);
+            w.writeF32(p.posZ);
+
+            w.writeF32(p.velX);
+            w.writeF32(p.velY);
+            w.writeF32(p.velZ);
+
+            w.writeF32(p.yaw);
+            w.writeF32(p.pitch);
+
+            w.writeU8(p.locomotionState);
+            w.writeU8(p.actionState);
+            w.writeU8(p.activeSkillSlot);
+            w.writeU8(p.activeSkillPhase);
+
+            w.writeU32(p.statusFlags);
+            w.writeU16(p.health);
+            w.writeU16(p.energy);
+        }
+
+        out.header.length = static_cast<uint16_t>(sizeof(MsgHeader) + out.payload.size());
+    }
+
+    void EncodeGameEvent(const GameEvent& msg, Message& out)
+    {
+        out.payload.clear();
+        FillHeader(out, MsgId::GameEvent);
+
+        ByteWriter w(out.payload);
+
+        w.writeU8(static_cast<uint8_t>(msg.type));
+        w.writeU32(msg.serverTick);
+        w.writeU32(msg.casterPlayerId);
+        w.writeU8(msg.skillSlot);
+        w.writeU8(msg.phaseIndex);
+        w.writeU32(msg.targetId);
+        w.writeF32(msg.param0);
+        w.writeF32(msg.param1);
+
+        out.header.length = static_cast<uint16_t>(sizeof(MsgHeader) + out.payload.size());
     }
 
 }

@@ -23,6 +23,7 @@ namespace proto
         void writeU16(uint16_t v);
         void writeU32(uint32_t v);
         void writeString(const std::string& s);
+        void writeF32(float v);
 
     private:
         std::vector<uint8_t>& _buf;
@@ -38,6 +39,7 @@ namespace proto
         bool readU16(uint16_t& v);
         bool readU32(uint32_t& v);
         bool readString(std::string& s);
+        bool readF32(float& v);
 
         bool eof() const { return _pos >= _size; }
 
@@ -48,20 +50,21 @@ namespace proto
     };
 
     // 各种消息的序列化接口
-    void EncodeJoinRequest(const JoinRequest& msg, Message& out);
     bool DecodeJoinRequest(const Message& msg, JoinRequest& out);
 
     void EncodeJoinAccept(const JoinAccept& msg, Message& out);
-    bool DecodeJoinAccept(const Message& msg, JoinAccept& out);
 
-    void EncodePing(const Ping& msg, Message& out);
     bool DecodePing(const Message& msg, Ping& out);
 
     void EncodePong(const Pong& msg, Message& out);
-    bool DecodePong(const Message& msg, Pong& out);
 
-    void EncodeUdpBind(const UdpBind& msg, Message& out);
     bool DecodeUdpBind(const Message& msg, UdpBind& out);
+
+    bool DecodeInputCommand(const Message& msg, InputCommand& out);
+
+    void EncodeWorldSnapshot(const WorldSnapshot& msg, Message& out);
+
+    void EncodeGameEvent(const GameEvent& msg, Message& out);
 }
 
 
