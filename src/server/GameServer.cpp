@@ -5,10 +5,20 @@
 // server/GameServer.cpp
 #include "GameServer.h"
 #include "../protocol/Serializer.h"
+#include "CollisionWorld.h"
 #include <iostream>
 
 GameServer::GameServer()
 {
+    const std::string path = "res/world.scol";
+    if (!g_collisionWorld.loadFromFile(path))
+    {
+        std::cerr << "Failed to load collision world from " << path << "\n";
+    }
+
+    std::cout << "Loaded collision world: "
+              << g_collisionWorld.boxes.size() << " boxes\n";
+
     std::cout << "GameServer created\n";
 }
 

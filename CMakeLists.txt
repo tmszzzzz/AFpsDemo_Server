@@ -30,7 +30,9 @@ add_executable(Demo0_Server src/main.cpp
         src/server/GameServer.h
         src/server/GameServer.cpp
         src/net/NetTransport.h
-        src/net/NetTransport.cpp)
+        src/net/NetTransport.cpp
+        src/server/CollisionWorld.h
+        src/server/CollisionWorld.cpp)
 
 target_link_libraries(Demo0_Server
         PRIVATE
