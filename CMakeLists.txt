@@ -45,6 +45,7 @@ add_executable(Demo0_Server src/main.cpp
         src/server/gameplay/heroes/HeroCore.cpp
         src/server/gameplay/heroes/HeroCore.h
         src/server/kcc/kcc.h
+        src/server/kcc/kcc.cpp
 )
 
 target_link_libraries(Demo0_Server
