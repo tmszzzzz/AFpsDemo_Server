@@ -15,14 +15,14 @@ namespace kcc
 {
     struct CollisionWorld
     {
-        float worldScale = 1.0f;       // Ä¿Ç° Unity ¶Ë¹Ì¶¨Ğ´ 1.0f
-        std::vector<Obb> boxes;        // ËùÓĞ¾²Ì¬ Box
+        float worldScale = 1.0f;       // ç›®å‰ Unity ç«¯å›ºå®šå†™ 1.0f
+        std::vector<Obb> boxes;        // æ‰€æœ‰é™æ€ Box
 
-        // ±ãÀûº¯Êı£º´ÓÎÄ¼ş¼ÓÔØ
+        // ä¾¿åˆ©å‡½æ•°ï¼šä»æ–‡ä»¶åŠ è½½
         bool loadFromFile(const std::string& path);
     };
 
-    // ¶ÀÁ¢º¯ÊıĞÎÊ½µÄ½Ó¿Ú£¨ÄãÒ²¿ÉÒÔÖ»ÓÃ³ÉÔ±º¯Êı£©
+    // ç‹¬ç«‹å‡½æ•°å½¢å¼çš„æ¥å£ï¼ˆä½ ä¹Ÿå¯ä»¥åªç”¨æˆå‘˜å‡½æ•°ï¼‰
     bool LoadCollisionWorld(const std::string& path, CollisionWorld& outWorld);
 }
 

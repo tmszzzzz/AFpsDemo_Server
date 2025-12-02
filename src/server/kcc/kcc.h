@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include "CollisionWorld.h"   // 你前面定义的 Obb/CollisionWorld
+#include "../gameplay/movement/core/PlayerState.h"
 
 // 可以单独开一个命名空间，避免和 movement 混在一起
 namespace kcc
