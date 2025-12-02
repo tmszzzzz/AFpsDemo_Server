@@ -8,8 +8,8 @@
 /// 所有“运动源”的统一接口。
 /// 例如：本地输入、Dash、Knockback、Teleport 等。
 /// </summary>
-#include "MovementCommand.h"
 #include "../core/PlayerState.h"
+#include "../core/MovementCommand.h"
 
 namespace movement
 {

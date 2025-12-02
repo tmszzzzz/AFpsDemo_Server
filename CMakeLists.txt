@@ -41,6 +41,9 @@ add_executable(Demo0_Server src/main.cpp
         src/server/gameplay/movement/core/MovementSourceCollection.h
         src/server/gameplay/movement/core/CharacterMotor.cpp
         src/server/gameplay/movement/core/CharacterMotor.h
+        src/server/gameplay/heroes/HeroDefines.h
+        src/server/gameplay/heroes/HeroCore.cpp
+        src/server/gameplay/heroes/HeroCore.h
 )
 
 target_link_libraries(Demo0_Server
