@@ -5,7 +5,7 @@
 // server/GameServer.cpp
 #include "GameServer.h"
 #include "../protocol/Serializer.h"
-#include "CollisionWorld.h"
+#include "physics/CollisionWorld.h"
 #include <iostream>
 
 GameServer::GameServer()

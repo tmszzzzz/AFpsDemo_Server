@@ -8,7 +8,7 @@
 
 // server/GameServer.h
 #include "../protocol/Messages.h"
-#include "CollisionWorld.h"
+#include "physics/CollisionWorld.h"
 #include <cstdint>
 #include <unordered_map>
 #include <vector>

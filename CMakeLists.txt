@@ -31,8 +31,17 @@ add_executable(Demo0_Server src/main.cpp
         src/server/GameServer.cpp
         src/net/NetTransport.h
         src/net/NetTransport.cpp
-        src/server/CollisionWorld.h
-        src/server/CollisionWorld.cpp)
+        src/server/physics/CollisionWorld.h
+        src/server/physics/CollisionWorld.cpp
+        src/server/gameplay/movement/sources/IMovementSource.h
+        src/utils/Utils.h
+        src/server/gameplay/movement/core/PlayerState.h
+        src/server/gameplay/movement/core/MovementCommand.h
+        src/server/gameplay/movement/core/MovementSourceCollection.cpp
+        src/server/gameplay/movement/core/MovementSourceCollection.h
+        src/server/gameplay/movement/core/CharacterMotor.cpp
+        src/server/gameplay/movement/core/CharacterMotor.h
+)
 
 target_link_libraries(Demo0_Server
         PRIVATE
