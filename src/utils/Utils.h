@@ -42,12 +42,12 @@ struct Quat
     float x, y, z, w;
 };
 
-// Óë Unity µ¼³öµÄ BoxCollider ¶ÔÓ¦µÄ OBB
+// ä¸ Unity å¯¼å‡ºçš„ BoxCollider å¯¹åº”çš„ OBB
 struct Obb
 {
-    Vec3  center;      // ÊÀ½ç¿Õ¼äÖĞĞÄ
-    Quat  rotation{};    // ÊÀ½ç¿Õ¼äĞı×ª(ËÄÔªÊı x,y,z,w)
-    Vec3  halfExtents; // ÊÀ½ç¿Õ¼ä°ë³ß´ç
+    Vec3  center;      // ä¸–ç•Œç©ºé—´ä¸­å¿ƒ
+    Quat  rotation{};    // ä¸–ç•Œç©ºé—´æ—‹è½¬(å››å…ƒæ•° x,y,z,w)
+    Vec3  halfExtents; // ä¸–ç•Œç©ºé—´åŠå°ºå¯¸
     uint32_t flags{};    // bit0 = Walkable
 };
 

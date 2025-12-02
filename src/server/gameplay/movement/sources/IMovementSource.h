@@ -5,8 +5,8 @@
 #ifndef DEMO0_SERVER_IMOVEMENTSOURCE_H
 #define DEMO0_SERVER_IMOVEMENTSOURCE_H
 /// <summary>
-/// ËùÓĞ¡°ÔË¶¯Ô´¡±µÄÍ³Ò»½Ó¿Ú¡£
-/// ÀıÈç£º±¾µØÊäÈë¡¢Dash¡¢Knockback¡¢Teleport µÈ¡£
+/// æ‰€æœ‰â€œè¿åŠ¨æºâ€çš„ç»Ÿä¸€æ¥å£ã€‚
+/// ä¾‹å¦‚ï¼šæœ¬åœ°è¾“å…¥ã€Dashã€Knockbackã€Teleport ç­‰ã€‚
 /// </summary>
 #include "../core/PlayerState.h"
 #include "../core/MovementCommand.h"
@@ -21,7 +21,7 @@ namespace movement
         virtual bool IsActive() const = 0;
         virtual bool AutoRemoveWhenInactive() const = 0;
 
-        // ÔÚ¸ø¶¨×´Ì¬ÏÂ£¬Îª±¾Ö¡µÄ MovementCommand ¹±Ï××Ô¼ºµÄ²¿·Ö
+        // åœ¨ç»™å®šçŠ¶æ€ä¸‹ï¼Œä¸ºæœ¬å¸§çš„ MovementCommand è´¡çŒ®è‡ªå·±çš„éƒ¨åˆ†
         virtual void UpdateSource(const PlayerState& state,
                                   MovementCommand&   command,
                                   float              deltaTime) = 0;

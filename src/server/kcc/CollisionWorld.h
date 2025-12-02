@@ -11,7 +11,7 @@
 #include <vector>
 #include "../../utils/Utils.h"
 
-namespace server
+namespace kcc
 {
     struct CollisionWorld
     {

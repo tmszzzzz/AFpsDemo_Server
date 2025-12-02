@@ -13,17 +13,17 @@ namespace movement
     class CharacterMotor
     {
     public:
-        float Gravity  = 20.0f;   // ÊÀ½çÖØÁ¦¼ÓËÙ¶È£¨m/s^2£¬ÏòÏÂ£©
-        float MinPitch = -89.0f;  // ÊÓ½ÇÔ¼Êø£¨¶È£©
+        float Gravity  = 20.0f;   // ä¸–ç•Œé‡åŠ›åŠ é€Ÿåº¦ï¼ˆm/s^2ï¼Œå‘ä¸‹ï¼‰
+        float MinPitch = -89.0f;  // è§†è§’çº¦æŸï¼ˆåº¦ï¼‰
         float MaxPitch =  89.0f;
 
-        // Ë®Æ½ËÙ¶ÈÊÕÁ²²ÎÊı
+        // æ°´å¹³é€Ÿåº¦æ”¶æ•›å‚æ•°
         float HorizontalAccelerationGround  = 80.0f;
         float HorizontalDecelerationGround  = 60.0f;
         float HorizontalAccelerationAir     = 30.0f;
         float HorizontalDecelerationAir     = 20.0f;
 
-        // ¸ù¾İ MovementCommand ÍÆ½ø×´Ì¬£¬Êä³ö¡°ÀíÏëÎ»ÒÆ¡±£¨Î´×öÅö×²²Ã¼ô£©
+        // æ ¹æ® MovementCommand æ¨è¿›çŠ¶æ€ï¼Œè¾“å‡ºâ€œç†æƒ³ä½ç§»â€ï¼ˆæœªåšç¢°æ’è£å‰ªï¼‰
         void Step(PlayerState&            state,
                   const MovementCommand&  cmd,
                   float                   deltaTime,

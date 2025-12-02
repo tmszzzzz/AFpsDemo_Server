@@ -31,8 +31,8 @@ add_executable(Demo0_Server src/main.cpp
         src/server/GameServer.cpp
         src/net/NetTransport.h
         src/net/NetTransport.cpp
-        src/server/physics/CollisionWorld.h
-        src/server/physics/CollisionWorld.cpp
+        src/server/kcc/CollisionWorld.h
+        src/server/kcc/CollisionWorld.cpp
         src/server/gameplay/movement/sources/IMovementSource.h
         src/utils/Utils.h
         src/server/gameplay/movement/core/PlayerState.h
@@ -44,6 +44,7 @@ add_executable(Demo0_Server src/main.cpp
         src/server/gameplay/heroes/HeroDefines.h
         src/server/gameplay/heroes/HeroCore.cpp
         src/server/gameplay/heroes/HeroCore.h
+        src/server/kcc/kcc.h
 )
 
 target_link_libraries(Demo0_Server

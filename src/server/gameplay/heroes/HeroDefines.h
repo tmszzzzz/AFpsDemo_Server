@@ -21,7 +21,7 @@ namespace hero
     {
         float MaxHp = 100.0f;
 
-        // CharacterMotor �������
+        // CharacterMotor 所需参数
         float Gravity  = 20.0f;
         float MinPitch = -89.0f;
         float MaxPitch =  89.0f;
@@ -35,7 +35,7 @@ namespace hero
     struct HeroState
     {
         HeroId                HeroId = HeroId::None;
-        movement::PlayerState playerState;        // λ�á��ٶȡ������
+        movement::PlayerState playerState;        // 位置、速度、朝向等
 
         float Hp    = 0.0f;
         float MaxHp = 0.0f;

@@ -11,17 +11,17 @@ namespace movement
 {
     struct MovementCommand
     {
-        Vec3  DesiredVelocity = Vec3::zero();      // ±¾Ö¡ÆÚÍûµÄÊÀ½ç¿Õ¼äÁ¬ĞøËÙ¶È
-        Vec3  VelocityImpulse = Vec3::zero();      // ±¾Ö¡¶îÍâµş¼Óµ½ËÙ¶ÈÉÏµÄË²Ê±³åÁ¿
-        Vec3  ForcedDisplacement = Vec3::zero();   // ±¾Ö¡µÄÇ¿ÖÆÎ»ÒÆ
+        Vec3  DesiredVelocity = Vec3::zero();      // æœ¬å¸§æœŸæœ›çš„ä¸–ç•Œç©ºé—´è¿ç»­é€Ÿåº¦
+        Vec3  VelocityImpulse = Vec3::zero();      // æœ¬å¸§é¢å¤–å åŠ åˆ°é€Ÿåº¦ä¸Šçš„ç¬æ—¶å†²é‡
+        Vec3  ForcedDisplacement = Vec3::zero();   // æœ¬å¸§çš„å¼ºåˆ¶ä½ç§»
         bool  HasForcedDisplacement = false;
 
-        float LookDeltaYaw   = 0.0f;               // ÊÓ½Ç±ä»¯£¨¶È£©
+        float LookDeltaYaw   = 0.0f;               // è§†è§’å˜åŒ–ï¼ˆåº¦ï¼‰
         float LookDeltaPitch = 0.0f;
 
         static MovementCommand CreateEmpty()
         {
-            MovementCommand cmd; // Ä¬ÈÏ¹¹ÔìÒÑÖÃÁã
+            MovementCommand cmd; // é»˜è®¤æ„é€ å·²ç½®é›¶
             return cmd;
         }
     };

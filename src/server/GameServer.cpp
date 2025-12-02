@@ -2,10 +2,9 @@
 // Created by tmsz on 25-11-27.
 //
 
-// server/GameServer.cpp
+// kcc/GameServer.cpp
 #include "GameServer.h"
 #include "../protocol/Serializer.h"
-#include "physics/CollisionWorld.h"
 #include <iostream>
 
 GameServer::GameServer()

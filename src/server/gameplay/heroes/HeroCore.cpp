@@ -12,7 +12,7 @@ namespace hero
                        const Vec3& spawnPos,
                        const HeroConfig& config)
     {
-        // ÅäÖÃ CharacterMotor
+        // é…ç½® CharacterMotor
         _motor.Gravity  = config.Gravity;
         _motor.MinPitch = config.MinPitch;
         _motor.MaxPitch = config.MaxPitch;
@@ -22,10 +22,10 @@ namespace hero
         _motor.HorizontalAccelerationAir     = config.HorizontalAccelerationAir;
         _motor.HorizontalDecelerationAir     = config.HorizontalDecelerationAir;
 
-        // MovementSourceCollection Ä¬ÈÏ¹¹Ôì¼´¿É
+        // MovementSourceCollection é»˜è®¤æ„é€ å³å¯
          _movementSources = movement::MovementSourceCollection();
 
-        // ³õÊ¼»¯×´Ì¬
+        // åˆå§‹åŒ–çŠ¶æ€
         _state.HeroId = heroId;
         _state.playerState.Position   = spawnPos;
         _state.playerState.Velocity   = Vec3::zero();
@@ -41,13 +41,13 @@ namespace hero
                                 movement::MovementCommand& outCommand,
                                 Vec3&                      outDesiredDisplacement)
     {
-        // ÓÉËùÓĞ MovementSource ºÏ³É MovementCommand
+        // ç”±æ‰€æœ‰ MovementSource åˆæˆ MovementCommand
         outCommand = _movementSources.BuildCommand(_state.playerState, deltaTime);
 
-        // ½»¸ø CharacterMotor ¼ÆËã¡°ÀíÏëÎ»ÒÆ¡±
+        // äº¤ç»™ CharacterMotor è®¡ç®—â€œç†æƒ³ä½ç§»â€
         _motor.Step(_state.playerState, outCommand, deltaTime, outDesiredDisplacement);
 
-        // ×¢Òâ£º²»ÔÚÕâÀï¸Ä Position/IsGrounded£¬Åö×²ÓÉÍâ²ã KCC ´¦Àíºó»ØĞ´
+        // æ³¨æ„ï¼šä¸åœ¨è¿™é‡Œæ”¹ Position/IsGroundedï¼Œç¢°æ’ç”±å¤–å±‚ KCC å¤„ç†åå›å†™
     }
 
     void HeroCore::ApplyDamage(float amount)

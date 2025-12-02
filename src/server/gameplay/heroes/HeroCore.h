@@ -22,22 +22,22 @@ namespace hero
                  const Vec3& spawnPos,
                  const HeroConfig& config);
 
-        // ·ÃÎÊ×´Ì¬
+        // è®¿é—®çŠ¶æ€
         HeroState&       GetState()       { return _state; }
         const HeroState& GetState() const { return _state; }
 
         movement::PlayerState&       Movement()       { return _state.playerState; }
         const movement::PlayerState& Movement() const { return _state.playerState; }
 
-        // Ò»Ö¡ÔË¶¯Âß¼­£¨²»×öÅö×²£¬Ö»ËãÀíÏëÎ»ÒÆ£©
+        // ä¸€å¸§è¿åŠ¨é€»è¾‘ï¼ˆä¸åšç¢°æ’ï¼Œåªç®—ç†æƒ³ä½ç§»ï¼‰
         void TickMovement(float                        deltaTime,
                           movement::MovementCommand&   outCommand,
                           Vec3&                        outDesiredDisplacement);
 
-        // Ê©¼ÓÉËº¦
+        // æ–½åŠ ä¼¤å®³
         void ApplyDamage(float amount);
 
-        // ×¢²áÔË¶¯Ô´£¨±¾µØÊäÈë¡¢dash¡¢»÷ÍËµÈ£©
+        // æ³¨å†Œè¿åŠ¨æºï¼ˆæœ¬åœ°è¾“å…¥ã€dashã€å‡»é€€ç­‰ï¼‰
         void AddMovementSource(std::shared_ptr<movement::IMovementSource> src);
 
     private:

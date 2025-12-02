@@ -5,11 +5,11 @@
 #include "CollisionWorld.h"
 
 #include <fstream>
-#include <iostream> // Èç¹û²»ÏëÒªÈÕÖ¾¿ÉÒÔÈ¥µô
+#include <iostream> // å¦‚æœä¸æƒ³è¦æ—¥å¿—å¯ä»¥å»æ‰
 
-namespace server
+namespace kcc
 {
-    // Óë Unity µ¼³ö½Å±¾ÖĞµÄ MAGIC / VERSION ±£³ÖÒ»ÖÂ
+    // ä¸ Unity å¯¼å‡ºè„šæœ¬ä¸­çš„ MAGIC / VERSION ä¿æŒä¸€è‡´
     static constexpr uint32_t SCOL_MAGIC   = 0x4C4F4353u; // 'SCOL'
     static constexpr uint32_t SCOL_VERSION = 1u;
 
@@ -27,7 +27,7 @@ namespace server
             return false;
         }
 
-        // Ğ¡¹¤¾ß£º°²È«¶ÁÈ¡ N ×Ö½Ú
+        // å°å·¥å…·ï¼šå®‰å…¨è¯»å– N å­—èŠ‚
         auto readOrFail = [&fs](void* dst, std::size_t size) -> bool
         {
             fs.read(reinterpret_cast<char*>(dst), static_cast<std::streamsize>(size));
@@ -115,7 +115,7 @@ namespace server
             }
         }
 
-        // ¶Á³É¹¦£¬Ìæ»»Êä³ö
+        // è¯»æˆåŠŸï¼Œæ›¿æ¢è¾“å‡º
         outWorld = std::move(world);
         return true;
     }

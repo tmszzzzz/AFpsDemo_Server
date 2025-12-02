@@ -29,7 +29,7 @@ namespace movement
             return;
         }
 
-        // 1. ÊÓ½Ç¸üĞÂ
+        // 1. è§†è§’æ›´æ–°
         state.Yaw   += cmd.LookDeltaYaw;
         state.Pitch += cmd.LookDeltaPitch;
 
@@ -39,7 +39,7 @@ namespace movement
         if (state.Yaw > 360.0f) state.Yaw -= 360.0f;
         if (state.Yaw < 0.0f)   state.Yaw += 360.0f;
 
-        // 2. Ç¿ÖÆÎ»ÒÆ£ºÖ±½ÓÊä³ö£¬ÇåÁãËÙ¶È
+        // 2. å¼ºåˆ¶ä½ç§»ï¼šç›´æ¥è¾“å‡ºï¼Œæ¸…é›¶é€Ÿåº¦
         if (cmd.HasForcedDisplacement)
         {
             outDesiredDisplacement = cmd.ForcedDisplacement;
@@ -47,7 +47,7 @@ namespace movement
             return;
         }
 
-        // 3. ÆÕÍ¨ÔË¶¯Â·¾¶
+        // 3. æ™®é€šè¿åŠ¨è·¯å¾„
         Vec3 v = state.Velocity;
 
         if (state.IsGrounded && v.y <= 0.0f)
@@ -55,7 +55,7 @@ namespace movement
             v.y = 0.0f;
         }
 
-        // 3.1 Ë®Æ½ËÙ¶ÈÊÕÁ²
+        // 3.1 æ°´å¹³é€Ÿåº¦æ”¶æ•›
         Vec3 currentHorizontal{v.x, 0.0f, v.z};
         Vec3 desiredHorizontal{cmd.DesiredVelocity.x, 0.0f, cmd.DesiredVelocity.z};
 
@@ -81,24 +81,24 @@ namespace movement
         v.x = newHorizontal.x;
         v.z = newHorizontal.z;
 
-        // 3.2 µş¼Ó±¾Ö¡Ë²Ê±³åÁ¿
+        // 3.2 å åŠ æœ¬å¸§ç¬æ—¶å†²é‡
         if (cmd.VelocityImpulse.sqrMagnitude() > 0.0f)
         {
             v += cmd.VelocityImpulse;
         }
 
-        // 3.3 ÖØÁ¦
+        // 3.3 é‡åŠ›
         if (state.IsGrounded)
         {
             if (v.y <= 0.0f)
-                v.y = -5.0f; // ¼òµ¥¡°µØÃæÎü¸½¡±
+                v.y = -5.0f; // ç®€å•â€œåœ°é¢å¸é™„â€
         }
         else
         {
             v.y -= Gravity * deltaTime;
         }
 
-        // 4. Ğ´»ØËÙ¶È & ÀíÏëÎ»ÒÆ
+        // 4. å†™å›é€Ÿåº¦ & ç†æƒ³ä½ç§»
         state.Velocity         = v;
         outDesiredDisplacement = v * deltaTime;
     }

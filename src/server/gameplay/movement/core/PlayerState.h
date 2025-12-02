@@ -11,13 +11,13 @@ namespace movement
 {
     struct PlayerState
     {
-        Vec3  Position;   // ÊÀ½ç¿Õ¼äÎ»ÖÃ
-        Vec3  Velocity;   // ÊÀ½ç¿Õ¼äËÙ¶È
+        Vec3  Position;   // ä¸–ç•Œç©ºé—´ä½ç½®
+        Vec3  Velocity;   // ä¸–ç•Œç©ºé—´é€Ÿåº¦
 
-        float Yaw  = 0.0f;  // Ë®Æ½³¯Ïò£¨¶È£©
-        float Pitch = 0.0f; // ´¹Ö±ÊÓ½Ç£¨¶È£©
+        float Yaw  = 0.0f;  // æ°´å¹³æœå‘ï¼ˆåº¦ï¼‰
+        float Pitch = 0.0f; // å‚ç›´è§†è§’ï¼ˆåº¦ï¼‰
 
-        bool  IsGrounded = false; // ÊÇ·ñÌùµØ£¨ÓÉÅö×²/KCC ¾ö¶¨£©
+        bool  IsGrounded = false; // æ˜¯å¦è´´åœ°ï¼ˆç”±ç¢°æ’/KCC å†³å®šï¼‰
     };
 }
 #endif //DEMO0_SERVER_PLAYERSTATE_H
