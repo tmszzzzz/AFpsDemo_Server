@@ -7,7 +7,7 @@
 #include <fstream>
 #include <iostream> // 如果不想要日志可以去掉
 
-namespace kcc
+namespace collision
 {
     // 与 Unity 导出脚本中的 MAGIC / VERSION 保持一致
     static constexpr uint32_t SCOL_MAGIC   = 0x4C4F4353u; // 'SCOL'

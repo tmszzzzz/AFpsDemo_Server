@@ -8,7 +8,7 @@
 #pragma once
 
 #include <cstdint>
-#include "CollisionWorld.h"   // 你前面定义的 Obb/CollisionWorld
+#include "../collision/CollisionWorld.h"   // 你前面定义的 Obb/CollisionWorld
 #include "../gameplay/movement/core/PlayerState.h"
 
 // 可以单独开一个命名空间，避免和 movement 混在一起
@@ -103,7 +103,7 @@ namespace kcc
     /// 输出：
     ///   - capsule.center 会被更新到最终位置
     ///   - 返回 MoveResult，包含实际位移 & ground 状态
-    MoveResult MoveCapsule(const CollisionWorld& world,
+    MoveResult MoveCapsule(const collision::CollisionWorld& world,
                            Capsule&              capsule,
                            const Vec3&           desiredDelta,
                            const Settings&       settings);
@@ -115,7 +115,7 @@ namespace kcc
     ///   - 胶囊的 radius/halfHeight 由形参给出（不同英雄可以不同）
     ///   - state.IsGrounded 由结果回写
     ///
-    inline MoveResult MovePlayer(const CollisionWorld& world,
+    inline MoveResult MovePlayer(const collision::CollisionWorld& world,
                                  movement::PlayerState& state,
                                  const Vec3&           desiredDelta,
                                  const Settings&       settings,

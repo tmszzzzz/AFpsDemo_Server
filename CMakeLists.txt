@@ -31,8 +31,8 @@ add_executable(Demo0_Server src/main.cpp
         src/server/GameServer.cpp
         src/net/NetTransport.h
         src/net/NetTransport.cpp
-        src/server/kcc/CollisionWorld.h
-        src/server/kcc/CollisionWorld.cpp
+        src/server/collision/CollisionWorld.h
+        src/server/collision/CollisionWorld.cpp
         src/server/gameplay/movement/sources/IMovementSource.h
         src/utils/Utils.h
         src/server/gameplay/movement/core/PlayerState.h

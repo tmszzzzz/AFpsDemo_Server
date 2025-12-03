@@ -2,6 +2,7 @@
 // Created by tmsz on 25-12-3.
 //
 #include "Kcc.h"
+#include "../collision/CollisionWorld.h"
 
 namespace kcc
 {
@@ -18,7 +19,7 @@ namespace kcc
         }
 
         // 穿透修正：如果当前 capsule 已经与若干 OBB 重叠，尝试挤出。
-        void ResolveInitialPenetration(const CollisionWorld& world,
+        void ResolveInitialPenetration(const collision::CollisionWorld& world,
                                        Capsule&              capsule,
                                        const Settings&       settings)
         {
@@ -29,7 +30,7 @@ namespace kcc
         }
 
         // 沿给定位移 delta 对所有 OBB 做 sweep，找出最早一次碰撞。
-        bool SweepAndFindFirstHit(const CollisionWorld& world,
+        bool SweepAndFindFirstHit(const collision::CollisionWorld& world,
                                   const Capsule&        capsule,
                                   const Vec3&           delta,
                                   const Settings&       settings,
@@ -65,7 +66,7 @@ namespace kcc
         }
 
         // 额外的向下 ground check / snap（主 loop 结束后调用）
-        void DoGroundSnap(const CollisionWorld& world,
+        void DoGroundSnap(const collision::CollisionWorld& world,
                           Capsule&              capsule,
                           const Settings&       settings,
                           MoveResult&           inOutResult)
@@ -78,7 +79,7 @@ namespace kcc
     } // namespace
 
 
-    MoveResult MoveCapsule(const CollisionWorld& world,
+    MoveResult MoveCapsule(const collision::CollisionWorld& world,
                            Capsule&              capsule,
                            const Vec3&           desiredDelta,
                            const Settings&       settings)

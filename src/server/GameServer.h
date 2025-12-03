@@ -8,7 +8,7 @@
 
 // kcc/GameServer.h
 #include "../protocol/Messages.h"
-#include "kcc/CollisionWorld.h"
+#include "collision/CollisionWorld.h"
 #include <cstdint>
 #include <unordered_map>
 #include <vector>
@@ -40,7 +40,7 @@ public:
     // 用playerId反查connId
     bool FindConnIdByPlayerId(uint32_t playerId, uint32_t& outConnId) const;
 
-    kcc::CollisionWorld g_collisionWorld;
+    collision::CollisionWorld g_collisionWorld;
 
 private:
     struct ClientInfo
