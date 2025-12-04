@@ -1,7 +1,7 @@
 //
 // Created by tmsz on 25-12-3.
 //
-#include "Kcc.h"
+#include "KCC.h"
 #include "../collision/CollisionWorld.h"
 
 namespace kcc

@@ -6,9 +6,9 @@
 #define DEMO0_SERVER_GAMESERVER_H
 
 
-// kcc/GameServer.h
 #include "../protocol/Messages.h"
 #include "collision/CollisionWorld.h"
+#include "gameplay/movement/core/PlayerState.h"
 #include <cstdint>
 #include <unordered_map>
 #include <vector>
@@ -46,7 +46,11 @@ private:
     struct ClientInfo
     {
         uint32_t playerId = 0;
-        // 这里将来可以加更多状态
+        movement::PlayerState  state{};
+
+        // 最近一次从客户端收到的输入（默认为“无输入”，即各轴为 0）
+        proto::InputCommand    lastInput{};
+        //to be added...
     };
 
     uint32_t _nextPlayerId = 1;
@@ -57,6 +61,7 @@ private:
 
     void handleJoinRequest(uint32_t connectionId, const proto::Message& msg);
     void handlePing(uint32_t connectionId, const proto::Message& msg);
+    void handleInputCommand(uint32_t connectionId, const proto::Message& msg);
 };
 
 

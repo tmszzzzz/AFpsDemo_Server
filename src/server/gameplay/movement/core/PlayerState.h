@@ -18,6 +18,7 @@ namespace movement
         float Pitch = 0.0f; // 垂直视角（度）
 
         bool  IsGrounded = false; // 是否贴地（由碰撞/KCC 决定）
+        uint8_t LocomotionState  = 0;     // 0 = Idle, 1 = Move（M3 简化用）
     };
 }
 #endif //DEMO0_SERVER_PLAYERSTATE_H
