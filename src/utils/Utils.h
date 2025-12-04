@@ -40,6 +40,38 @@ struct Vec3
 struct Quat
 {
     float x, y, z, w;
+    void ComputeObbAxesFromQuat(Vec3& axisX, Vec3& axisY, Vec3& axisZ) const
+    {
+        // 标准四元数 -> 3x3 旋转矩阵，列向量为局部 X/Y/Z 轴
+        float xx = x * x;
+        float yy = y * y;
+        float zz = z * z;
+        float xy = x * y;
+        float xz = x * z;
+        float yz = y * z;
+        float wx = w * x;
+        float wy = w * y;
+        float wz = w * z;
+
+        // 注意：这里按“列向量”理解，每个 axis 是一列
+        axisX = Vec3{
+                1.0f - 2.0f * (yy + zz),
+                2.0f * (xy + wz),
+                2.0f * (xz - wy)
+        };
+
+        axisY = Vec3{
+                2.0f * (xy - wz),
+                1.0f - 2.0f * (xx + zz),
+                2.0f * (yz + wx)
+        };
+
+        axisZ = Vec3{
+                2.0f * (xz + wy),
+                2.0f * (yz - wx),
+                1.0f - 2.0f * (xx + yy)
+        };
+    }
 };
 
 // 与 Unity 导出的 BoxCollider 对应的 OBB
@@ -49,6 +81,14 @@ struct Obb
     Quat  rotation{};    // 世界空间旋转(四元数 x,y,z,w)
     Vec3  halfExtents; // 世界空间半尺寸
     uint32_t flags{};    // bit0 = Walkable
+};
+
+
+// 简单 AABB 结构（世界空间）
+struct Aabb
+{
+    Vec3 min;
+    Vec3 max;
 };
 
 #endif //DEMO0_SERVER_UTILS_H

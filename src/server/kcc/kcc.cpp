@@ -9,39 +9,200 @@ namespace kcc
 
     namespace
     {
-        // 根据 desiredDelta 拆分步长，避免单次位移过大导致穿墙。
-        float ComputeStepFraction(const Vec3& desiredDelta, float maxStepDistance)
+
+        // 计算 OBB 的世界 AABB（假定 Obb 提供 center/halfExtents/rotationMatrix）
+        // rotationMatrix 的三列为世界空间的局部 X/Y/Z 轴。
+        Aabb ComputeObbWorldAabb(const Obb& obb)
         {
-            float len = desiredDelta.magnitude();
-            if (len <= 1e-6f) return 0.0f;
-            if (len <= maxStepDistance) return 1.0f;
-            return maxStepDistance / len; // 0~1，表示本次只走这么多比例
+            // 假定 Obb 有：Vec3 center; Vec3 halfExtents; Vec3 axisX, axisY, axisZ;
+            Vec3 axisX, axisY, axisZ;
+            obb.rotation.ComputeObbAxesFromQuat(axisX, axisY, axisZ);
+
+            Vec3 ax = axisX * obb.halfExtents.x;
+            Vec3 ay = axisY * obb.halfExtents.y;
+            Vec3 az = axisZ * obb.halfExtents.z;
+
+            Vec3 ext{
+                    std::fabs(ax.x) + std::fabs(ay.x) + std::fabs(az.x),
+                    std::fabs(ax.y) + std::fabs(ay.y) + std::fabs(az.y),
+                    std::fabs(ax.z) + std::fabs(ay.z) + std::fabs(az.z)
+            };
+
+            Aabb aabb;
+            aabb.min = obb.center - ext;
+            aabb.max = obb.center + ext;
+            return aabb;
         }
 
-        // 穿透修正：如果当前 capsule 已经与若干 OBB 重叠，尝试挤出。
-        void ResolveInitialPenetration(const collision::CollisionWorld& world,
-                                       Capsule&              capsule,
-                                       const Settings&       settings)
+        // 计算胶囊 swept AABB：考虑上下端球 + 运动 delta
+        Aabb ComputeCapsuleSweptAabb(const Capsule& capsule, const Vec3& delta)
         {
-            // TODO:
-            // 1. 找到所有和 capsule 重叠的 OBB
-            // 2. 对每个求一个推离向量
-            // 3. 合成一个小的修正位移，迭代几次
+            Vec3 top0    = capsule.topCenter();
+            Vec3 bottom0 = capsule.bottomCenter();
+            Vec3 top1    = top0 + delta;
+            Vec3 bottom1 = bottom0 + delta;
+
+            Vec3 minPt{
+                    std::min(std::min(top0.x, bottom0.x), std::min(top1.x, bottom1.x)),
+                    std::min(std::min(top0.y, bottom0.y), std::min(top1.y, bottom1.y)),
+                    std::min(std::min(top0.z, bottom0.z), std::min(top1.z, bottom1.z))
+            };
+
+            Vec3 maxPt{
+                    std::max(std::max(top0.x, bottom0.x), std::max(top1.x, bottom1.x)),
+                    std::max(std::max(top0.y, bottom0.y), std::max(top1.y, bottom1.y)),
+                    std::max(std::max(top0.z, bottom0.z), std::max(top1.z, bottom1.z))
+            };
+
+            Vec3 r{capsule.radius, capsule.radius, capsule.radius};
+
+            Aabb aabb;
+            aabb.min = minPt - r;
+            aabb.max = maxPt + r;
+            return aabb;
         }
 
-        // 沿给定位移 delta 对所有 OBB 做 sweep，找出最早一次碰撞。
-        bool SweepAndFindFirstHit(const collision::CollisionWorld& world,
-                                  const Capsule&        capsule,
-                                  const Vec3&           delta,
-                                  const Settings&       settings,
-                                  Hit&                  outHit)
+        bool AabbOverlap(const Aabb& a, const Aabb& b)
         {
-            // TODO:
-            // 1. broad-phase：用 swept AABB 过滤 OBB
-            // 2. 对每个候选 OBB 做 capsule vs OBB 的 sweep，求 t / normal
-            // 3. 选 t 最小的一个，写入 outHit
-            outHit.hasHit = false;
-            return false;
+            if (a.max.x < b.min.x || a.min.x > b.max.x) return false;
+            if (a.max.y < b.min.y || a.min.y > b.max.y) return false;
+            if (a.max.z < b.min.z || a.min.z > b.max.z) return false;
+            return true;
+        }
+
+        // 把世界坐标点变换到 OBB 局部空间：pLocal = R^T * (pWorld - center)
+        Vec3 WorldToObbLocal(const Obb& obb, const Vec3& pWorld)
+        {
+            Vec3 axisX, axisY, axisZ;
+            obb.rotation.ComputeObbAxesFromQuat(axisX, axisY, axisZ);
+
+            Vec3 d = pWorld - obb.center;
+            // 轴是单位向量，直接点乘
+            return Vec3{
+                    d.dot(axisX),
+                    d.dot(axisY),
+                    d.dot(axisZ)
+            };
+        }
+
+        // 从 OBB 局部空间点变回世界：pWorld = center + axisX * x + axisY * y + axisZ * z
+        Vec3 ObbLocalToWorld(const Obb& obb, const Vec3& pLocal)
+        {
+            Vec3 axisX, axisY, axisZ;
+            obb.rotation.ComputeObbAxesFromQuat(axisX, axisY, axisZ);
+
+            return obb.center
+                   + axisX * pLocal.x
+                   + axisY * pLocal.y
+                   + axisZ * pLocal.z;
+        }
+
+        // 局部空间中，点到 AABB 的最近点
+        Vec3 ClosestPointOnBoxLocal(const Vec3& p, const Vec3& halfExtents)
+        {
+            Vec3 q = p;
+            q.x = std::max(-halfExtents.x, std::min(halfExtents.x, q.x));
+            q.y = std::max(-halfExtents.y, std::min(halfExtents.y, q.y));
+            q.z = std::max(-halfExtents.z, std::min(halfExtents.z, q.z));
+            return q;
+        }
+
+        // 球 vs OBB 重叠测试
+        bool SphereOverlapsObb(const Vec3& center, float radius, const Obb& obb)
+        {
+            Vec3 cLocal  = WorldToObbLocal(obb, center);
+            Vec3 closest = ClosestPointOnBoxLocal(cLocal, obb.halfExtents);
+            Vec3 diff    = cLocal - closest;
+            float dist2  = diff.sqrMagnitude();
+            return dist2 <= radius * radius;
+        }
+
+        // 球 vs OBB sweep：沿 delta 方向移动，返回是否命中及最早 t / normal
+        bool SweepSphereObb(const Vec3& center,
+                            float       radius,
+                            const Vec3& delta,
+                            const Obb&  obb,
+                            float       sweepEps,
+                            Hit&        outHit)
+        {
+            (void)sweepEps; // 目前暂未使用，可用于做 t 的微调
+
+            // 1. 计算 OBB 局部轴
+            Vec3 axisX, axisY, axisZ;
+            obb.rotation.ComputeObbAxesFromQuat(axisX, axisY, axisZ);
+
+            // 2. 转到 OBB 局部空间
+            Vec3 c0Local = WorldToObbLocal(obb, center);
+            Vec3 dLocal{
+                    delta.dot(axisX),
+                    delta.dot(axisY),
+                    delta.dot(axisZ)
+            };
+
+            // 3. 将盒子膨胀 radius，转为 ray vs AABB 问题
+            Vec3 ext = obb.halfExtents + Vec3{radius, radius, radius};
+
+            float t0 = 0.0f;
+            float t1 = 1.0f;
+            int   hitAxis = -1;
+
+            auto updateInterval = [&](float c, float dc, float e, int axis)->bool
+            {
+                if (std::fabs(dc) < 1e-8f)
+                {
+                    if (c < -e || c > e) return false;
+                    return true;
+                }
+
+                float invD  = 1.0f / dc;
+                float tNear = (-e - c) * invD;
+                float tFar  = ( e - c) * invD;
+                if (tNear > tFar) std::swap(tNear, tFar);
+
+                if (tNear > t0)
+                {
+                    t0      = tNear;
+                    hitAxis = axis;
+                }
+                if (tFar < t1) t1 = tFar;
+
+                if (t0 > t1) return false;
+                return true;
+            };
+
+            if (!updateInterval(c0Local.x, dLocal.x, ext.x, 0)) return false;
+            if (!updateInterval(c0Local.y, dLocal.y, ext.y, 1)) return false;
+            if (!updateInterval(c0Local.z, dLocal.z, ext.z, 2)) return false;
+
+            if (t0 < 0.0f || t0 > 1.0f) return false;
+
+            // 4. 命中点与局部法线
+            Vec3 hitLocal = c0Local + dLocal * t0;
+
+            Vec3 nLocal{0.0f, 0.0f, 0.0f};
+            if (hitAxis == 0)
+                nLocal.x = (dLocal.x > 0.0f) ? -1.0f : 1.0f;
+            else if (hitAxis == 1)
+                nLocal.y = (dLocal.y > 0.0f) ? -1.0f : 1.0f;
+            else if (hitAxis == 2)
+                nLocal.z = (dLocal.z > 0.0f) ? -1.0f : 1.0f;
+
+            // 5. 转回世界空间
+            Vec3 hitWorld = ObbLocalToWorld(obb, hitLocal);
+            Vec3 nWorld   =
+                    axisX * nLocal.x +
+                    axisY * nLocal.y +
+                    axisZ * nLocal.z;
+            nWorld = nWorld.normalized();
+
+            outHit.hasHit = true;
+            outHit.t      = t0;
+            outHit.point  = hitWorld;
+            outHit.normal = nWorld;
+            outHit.obb    = &obb;
+            // outHit.walkable 由外层根据 obb.flags 填充
+
+            return true;
         }
 
         // 根据碰撞法线对剩余位移做 slide（投影到切线平面）
@@ -65,16 +226,214 @@ namespace kcc
             return cosTheta >= minCos;
         }
 
+        // 根据 desiredDelta 拆分步长，避免单次位移过大导致穿墙。
+        float ComputeStepFraction(const Vec3& desiredDelta, float maxStepDistance)
+        {
+            float len = desiredDelta.magnitude();
+            if (len <= 1e-6f) return 0.0f;
+            if (len <= maxStepDistance) return 1.0f;
+            return maxStepDistance / len; // 0~1，表示本次只走这么多比例
+        }
+
+        // 穿透修正：如果当前 capsule 已经与若干 OBB 重叠，尝试挤出。
+        void ResolveInitialPenetration(const collision::CollisionWorld& world,
+                                       Capsule&              capsule,
+                                       const Settings&       settings)
+        {
+            // 若不需要贴地或地面探测距离为 0，则直接返回
+            if (settings.groundSnapDistance <= 0.0f)
+                return;
+
+            // 目前若已经明确有可靠的 onGround，可以选择跳过 snap
+            // 这里保守起见：即使 onGround 为 true，也允许继续贴地以消除小缝隙
+
+            Vec3 down{0.0f, -1.0f, 0.0f};
+            float maxDist = settings.groundSnapDistance;
+
+            // 从胶囊底部球心开始，沿着 -Y 方向做一小段 sweep
+            Vec3 sphereStart = capsule.bottomCenter();
+            float sphereRadius = std::max(0.0f, capsule.radius - settings.skinWidth);
+            Vec3 delta = down * maxDist;
+
+            bool  foundAny = false;
+            float bestDist = maxDist;
+            Hit   bestHit;
+
+            for (const Obb& obb : world.boxes)
+            {
+                Hit h;
+                bool hit = SweepSphereObb(sphereStart,
+                                          sphereRadius,
+                                          delta,
+                                          obb,
+                                          settings.sweepEpsilon,
+                                          h);
+                if (!hit || !h.hasHit)
+                    continue;
+
+                float hitDist = maxDist * h.t;
+                if (hitDist < bestDist)
+                {
+                    bestDist = hitDist;
+                    bestHit  = h;
+                    bestHit.walkable = (obb.flags & 0x1u) != 0;
+                    foundAny = true;
+                }
+            }
+
+            if (!foundAny)
+                return;
+
+            // 必须是可行走表面，且法线坡度在可接受范围内
+            if (!bestHit.walkable)
+                return;
+
+            if (!IsGroundNormal(bestHit.normal, settings.maxSlopeAngleDeg))
+                return;
+
+            // 将胶囊整体沿 -Y 推到命中点位置（减去 skin 宽度相当于球的半径调整）
+            capsule.center += down * bestDist;
+        }
+
+        // 沿给定位移 delta 对所有 OBB 做 sweep，找出最早一次碰撞。
+        bool SweepAndFindFirstHit(const collision::CollisionWorld& world,
+                                  const Capsule&        capsule,
+                                  const Vec3&           delta,
+                                  const Settings&       settings,
+                                  Hit&                  outHit) {
+            // 1. 先构造胶囊在本次位移下的 swept AABB，作为 broad-phase 过滤
+            Aabb sweptCapsule = ComputeCapsuleSweptAabb(capsule, delta);
+
+            bool foundAnyHit = false;
+            float bestT = 1.0f;   // 当前已知的最早命中时间
+            Hit bestHit;              // 对应的命中信息
+
+            // 2. 遍历世界中的所有 OBB，做粗过滤 + 精确检测
+            const std::vector<Obb> &obbs = world.boxes; // 假定 CollisionWorld 暴露一个 OBB 列表
+
+            for (const Obb &obb: obbs) {
+                // 2.1 broad-phase：如果本次胶囊 swept AABB 与此 OBB 的 AABB 根本不重叠，就不可能撞到
+                Aabb obbAabb = ComputeObbWorldAabb(obb);
+                if (!AabbOverlap(sweptCapsule, obbAabb))
+                    continue;
+
+                // 2.2 三球近似胶囊：上端/中部/下端三个球分别做 sweep，挑出最早命中
+                Vec3 sphereCenters[3] = {
+                        capsule.topCenter(),
+                        capsule.center,
+                        capsule.bottomCenter()
+                };
+
+                float localBestT = 1.0f;
+                Hit localBestHit;
+                bool localHasHit = false;
+
+                float sphereRadius = std::max(0.0f, capsule.radius - settings.skinWidth);
+
+                for (auto sphereCenter : sphereCenters) {
+                    Hit h;
+                    bool hit = SweepSphereObb(sphereCenter,
+                                              sphereRadius,
+                                              delta,
+                                              obb,
+                                              settings.sweepEpsilon,
+                                              h);
+                    if (!hit || !h.hasHit)
+                        continue;
+
+                    if (!localHasHit || h.t < localBestT) {
+                        localHasHit = true;
+                        localBestT = h.t;
+                        localBestHit = h;
+                    }
+                }
+
+                if (!localHasHit)
+                    continue;
+
+                // 2.3 与当前全局最佳比较，只保留最早的命中
+                if (!foundAnyHit || localBestT < bestT) {
+                    foundAnyHit = true;
+                    bestT = localBestT;
+                    bestHit = localBestHit;
+
+                    // walkable 标记由 OBB 的 flags 推导，bit0 = Walkable
+                    bestHit.walkable = (obb.flags & 0x1u) != 0;
+                }
+            }
+
+            if (!foundAnyHit) {
+                outHit.hasHit = false;
+                return false;
+            }
+
+            outHit = bestHit;
+            return true;
+        }
+
         // 额外的向下 ground check / snap（主 loop 结束后调用）
         void DoGroundSnap(const collision::CollisionWorld& world,
                           Capsule&              capsule,
                           const Settings&       settings,
                           MoveResult&           inOutResult)
         {
-            // TODO:
-            // 1. 从 capsule 当前位置往下做短距离 sweep
-            // 2. 如果命中可站立平面且距离 < groundSnapDistance，
-            //    则沿法线微调 capsule.center，并把 onGround/groundNormal 填好
+            // 若不需要贴地或地面探测距离为 0，则直接返回
+            if (settings.groundSnapDistance <= 0.0f)
+                return;
+
+            // 目前若已经明确有可靠的 onGround，可以选择跳过 snap
+            // 这里保守起见：即使 onGround 为 true，也允许继续贴地以消除小缝隙
+
+            Vec3 down{0.0f, -1.0f, 0.0f};
+            float maxDist = settings.groundSnapDistance;
+
+            // 从胶囊底部球心开始，沿着 -Y 方向做一小段 sweep
+            Vec3 sphereStart = capsule.bottomCenter();
+            float sphereRadius = std::max(0.0f, capsule.radius - settings.skinWidth);
+            Vec3 delta = down * maxDist;
+
+            bool  foundAny = false;
+            float bestDist = maxDist;
+            Hit   bestHit;
+
+            for (const Obb& obb : world.boxes)
+            {
+                Hit h;
+                bool hit = SweepSphereObb(sphereStart,
+                                          sphereRadius,
+                                          delta,
+                                          obb,
+                                          settings.sweepEpsilon,
+                                          h);
+                if (!hit || !h.hasHit)
+                    continue;
+
+                float hitDist = maxDist * h.t;
+                if (hitDist < bestDist)
+                {
+                    bestDist = hitDist;
+                    bestHit  = h;
+                    bestHit.walkable = (obb.flags & 0x1u) != 0;
+                    foundAny = true;
+                }
+            }
+
+            if (!foundAny)
+                return;
+
+            // 必须是可行走表面，且法线坡度在可接受范围内
+            if (!bestHit.walkable)
+                return;
+
+            if (!IsGroundNormal(bestHit.normal, settings.maxSlopeAngleDeg))
+                return;
+
+            // 将胶囊整体沿 -Y 推到命中点位置（减去 skin 宽度相当于球的半径调整）
+            capsule.center += down * bestDist;
+
+            inOutResult.onGround     = true;
+            inOutResult.groundNormal = bestHit.normal;
+            inOutResult.groundObject = bestHit.obb;
         }
     } // namespace
 
