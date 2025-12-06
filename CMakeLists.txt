@@ -46,6 +46,8 @@ add_executable(Demo0_Server src/main.cpp
         src/server/gameplay/heroes/HeroCore.h
         src/server/kcc/KCC.h
         src/server/kcc/KCC.cpp
+        src/server/gameplay/movement/sources/NetworkInputMovementSource.cpp
+        src/server/gameplay/movement/sources/NetworkInputMovementSource.h
 )
 
 target_link_libraries(Demo0_Server

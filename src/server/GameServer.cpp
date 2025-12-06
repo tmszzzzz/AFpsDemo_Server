@@ -4,6 +4,8 @@
 
 #include "GameServer.h"
 #include "../protocol/Serializer.h"
+#include "kcc/KCC.h"
+#include "gameplay/movement/sources/NetworkInputMovementSource.h"
 #include <iostream>
 
 GameServer::GameServer()
@@ -44,62 +46,46 @@ void GameServer::OnMessage(uint32_t connectionId, const proto::Message& msg)
 }
 
 void GameServer::Tick(float dt) {
-    // 简单地用 tick 累加 serverTime，真实项目可用 chrono
+    if (dt <= 0.0f)
+        return;
+
+    // 1. 维护简单的 serverTime（保留原有行为）
     _serverTime += static_cast<uint32_t>(dt * 1000.0f);
 
-    // --- M3：根据 lastInput 推进 PlayerState（无重力、无碰撞） ---
-    static constexpr float kMoveSpeed = 5.0f;          // 统一移动速度
-    static constexpr float kInputEps = 1e-3f;         // 输入判零阈值
-    static constexpr float kDeg2Rad = 3.1415926535f / 180.0f;
+    // 2. 准备 KCC 设置和胶囊体参数（当前版本所有英雄共用一份）
+    static kcc::Settings s_kccSettings{};
+    static const float kCapsuleRadius     = 0.5f;
+    static const float kCapsuleHalfHeight = 0.9f;
 
-    for (auto &kv: _clients) {
+    // 3. 遍历所有玩家，驱动 HeroCore + KCC
+    for (auto& kv : _clients) {
         ClientInfo &info = kv.second;
-        movement::PlayerState &st = info.state;
-        const proto::InputCommand &in = info.lastInput;
+        if (!info.hero)
+            continue;
 
-        // 1. 先同步视角（即使不走路，也让朝向跟随输入）
-        st.Yaw = in.yaw;
-        st.Pitch = in.pitch;
+        hero::HeroCore &core = *info.hero;
 
-        // 2. 从输入中取本地平面移动向量（XZ 平面上的“摇杆”）
-        float moveX = in.moveX; // 本地右轴
-        float moveY = in.moveY; // 本地前轴
+        // 3.1 由 HeroCore 合成 MovementCommand，并计算“理想位移”（不含碰撞）
+        movement::MovementCommand cmd = movement::MovementCommand::CreateEmpty();
+        Vec3 desiredDisplacement = Vec3::zero();
 
-        float lenSq = moveX * moveX + moveY * moveY;
+        core.TickMovement(dt, cmd, desiredDisplacement);
 
-        Vec3 moveDirWorld{0.0f, 0.0f, 0.0f};
+        // 3.2 使用 KCC 处理碰撞 / 贴地 / 陡坡滑落等，回写 PlayerState.Position/IsGrounded
+        movement::PlayerState &mvState = core.Movement();
 
-        if (lenSq > kInputEps * kInputEps) {
-            // 2.1 归一化本地输入，避免对角线更快
-            float len = std::sqrt(lenSq);
-            float localX = moveX / len;
-            float localZ = moveY / len;
+        kcc::MovePlayer(
+                g_collisionWorld,
+                mvState,
+                desiredDisplacement,
+                s_kccSettings,
+                kCapsuleRadius,
+                kCapsuleHalfHeight
+        );
 
-            // 2.2 按 Y 轴旋转到世界坐标：基于当前 Yaw
-            float yawRad = st.Yaw * kDeg2Rad;
-            float c = std::cos(yawRad);
-            float s = std::sin(yawRad);
-
-            // 约定：Z 轴为“前”，X 轴为“右”
-            // 本地(X=右,Z=前) 旋转到世界：
-            moveDirWorld.x = localX * c + localZ * s;
-            moveDirWorld.y = 0.0f;
-            moveDirWorld.z = localZ * c - localX * s;
-        }
-
-        if (moveDirWorld.x == 0.0f &&
-            moveDirWorld.y == 0.0f &&
-            moveDirWorld.z == 0.0f) {
-            // 3.a 没有输入：速度置零、状态 Idle（保持位置不变）
-            st.Velocity = Vec3{0.0f, 0.0f, 0.0f};
-            st.LocomotionState = 0; // Idle
-        } else {
-            // 3.b 有输入：按固定速度在平面上移动
-            st.Velocity = moveDirWorld * kMoveSpeed;
-            st.Position += st.Velocity * dt;
-
-            st.LocomotionState = 1; // Move
-        }
+        // - mvState.Velocity / Yaw / Pitch 已在 CharacterMotor 内部更新
+        // - IsGrounded 在 KCC 中根据地面情况写回
+        // - pendingButtons 在 NetworkInputMovementSource 中已被消费并清零
     }
 }
 
@@ -135,9 +121,38 @@ void GameServer::handleJoinRequest(uint32_t connectionId, const proto::Message& 
     ClientInfo info{};
     info.playerId = playerId;
 
-    // 可选：让 lastInput 内的 playerId 也对齐，方便后续调试/日志
+    // 简单起见，先使用一组通用配置；后续可根据 heroId 做表驱动
+    hero::HeroConfig heroCfg{};
+    heroCfg.MaxHp                        = 200.0f;
+    heroCfg.Gravity                      = 20.0f;
+    heroCfg.MinPitch                     = -89.0f;
+    heroCfg.MaxPitch                     =  89.0f;
+    heroCfg.HorizontalAccelerationGround = 80.0f;
+    heroCfg.HorizontalDecelerationGround = 60.0f;
+    heroCfg.HorizontalAccelerationAir    = 30.0f;
+    heroCfg.HorizontalDecelerationAir    = 20.0f;
+
+    // TODO: 根据关卡/出生点系统决定 spawnPos，这里先用原点附近占位
+    Vec3 spawnPos{0.0f, 1.0f, 0.0f};
+
+    info.hero = std::make_unique<hero::HeroCore>(
+            hero::HeroId::Generic,
+            spawnPos,
+            heroCfg
+    );
+
+    // 为这个 Hero 挂一个 NetworkInputMovementSource
+    movement::NetworkInputMovementSource::NetInputBuffer buffer{};
+    buffer.lastInput      = &info.lastInput;
+    buffer.pendingButtons = &info.pendingButtons;
+
+    auto netInputSource =
+            std::make_shared<movement::NetworkInputMovementSource>(buffer);
+
+    info.hero->AddMovementSource(netInputSource);
+
     info.lastInput.playerId = playerId;
-    _clients[connectionId] = info;
+    _clients[connectionId] = std::move(info);
 
     std::cout << "JoinRequest from conn=" << connectionId
               << " name=" << req.playerName
@@ -203,6 +218,7 @@ void GameServer::handlePing(uint32_t connectionId, const proto::Message& msg)
     _outgoing.push_back(std::move(pkt));
 }
 
+// ==== 修改: GameServer::handleInputCommand ====
 void GameServer::handleInputCommand(uint32_t connectionId, const proto::Message& msg)
 {
     // 1. 解析 InputCommand 消息
@@ -231,12 +247,16 @@ void GameServer::handleInputCommand(uint32_t connectionId, const proto::Message&
         std::cout << "InputCommand playerId mismatch: conn=" << connectionId
                   << " stored=" << info.playerId
                   << " msg=" << cmd.playerId << "\n";
-        // 测试阶段先不丢弃，仍然覆盖 lastInput
+        // 测试阶段先不丢弃，仍然覆盖
     }
 
-    // 3. 更新该玩家的 lastInput（供 Tick 使用）
+    // 3. 覆盖“状态型输入”（轴 / 视角）
     info.lastInput = cmd;
+
+    // 4. 对“事件型输入”（按钮）做 OR 累积：自上次 Tick 以来按过的按钮都不会丢
+    info.pendingButtons |= cmd.buttonMask;
 }
+
 
 bool GameServer::FindConnIdByPlayerId(uint32_t playerId, uint32_t& outConnId) const
 {

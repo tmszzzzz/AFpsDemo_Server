@@ -9,6 +9,8 @@
 #include "../protocol/Messages.h"
 #include "collision/CollisionWorld.h"
 #include "gameplay/movement/core/PlayerState.h"
+#include "gameplay/movement/sources/InputCommandMovementSource.h"
+#include "gameplay/heroes/HeroCore.h"
 #include <cstdint>
 #include <unordered_map>
 #include <vector>
@@ -46,11 +48,16 @@ private:
     struct ClientInfo
     {
         uint32_t playerId = 0;
-        movement::PlayerState  state{};
 
-        // 最近一次从客户端收到的输入（默认为“无输入”，即各轴为 0）
-        proto::InputCommand    lastInput{};
-        //to be added...
+        // 网络输入缓冲：
+        // - lastInput 表示“最新一帧输入状态”
+        // - pendingButtons 自上次 Tick 以来 OR 的“按钮事件”
+        proto::InputCommand lastInput{};
+        uint32_t            pendingButtons = 0;
+
+        // 该连接对应的英雄核心（一个玩家一个 HeroCore）
+        std::unique_ptr<hero::HeroCore> hero;
+
     };
 
     uint32_t _nextPlayerId = 1;
