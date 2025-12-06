@@ -9,7 +9,6 @@
 #include "../protocol/Messages.h"
 #include "collision/CollisionWorld.h"
 #include "gameplay/movement/core/PlayerState.h"
-#include "gameplay/movement/sources/InputCommandMovementSource.h"
 #include "gameplay/heroes/HeroCore.h"
 #include <cstdint>
 #include <unordered_map>
