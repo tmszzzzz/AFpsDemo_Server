@@ -214,11 +214,16 @@ namespace proto
         w.writeU8(static_cast<uint8_t>(msg.type));
         w.writeU32(msg.serverTick);
         w.writeU32(msg.casterPlayerId);
-        w.writeU8(msg.skillSlot);
-        w.writeU8(msg.phaseIndex);
+
         w.writeU32(msg.targetId);
-        w.writeF32(msg.param0);
-        w.writeF32(msg.param1);
+
+        w.writeU8(msg.u8Param0);
+        w.writeU8(msg.u8Param1);
+
+        w.writeU32(msg.u32Param0);
+
+        w.writeF32(msg.f32Param0);
+        w.writeF32(msg.f32Param1);
 
         out.header.length = static_cast<uint16_t>(sizeof(MsgHeader) + out.payload.size());
     }

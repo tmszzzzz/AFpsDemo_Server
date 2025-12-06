@@ -121,16 +121,18 @@ namespace proto
     {
         GameEventType type;
 
-        uint32_t serverTick;
-        uint32_t casterPlayerId;
+        uint32_t serverTick;      // 事件发生时的服务端 tick
+        uint32_t casterPlayerId;  // 事件发起方（玩家/单位）id
 
-        uint8_t  skillSlot;    // Dash 固定 2
-        uint8_t  phaseIndex;   // 先固定 0
+        uint32_t targetId;        // 目标单位id（如果没有可为0）
 
-        uint32_t targetId;     // M3先写0
+        uint8_t  u8Param0;        // 通用 U8 参数槽
+        uint8_t  u8Param1;        // 通用 U8 参数槽
 
-        float param0;          // 例如 dashDistance
-        float param1;          // 先写0或dashDuration占位
+        uint32_t u32Param0;       // 通用 U32 参数槽
+
+        float    f32Param0;       // 通用 F32 参数槽
+        float    f32Param1;       // 通用 F32 参数槽
     };
 
     // 泛型消息包装
