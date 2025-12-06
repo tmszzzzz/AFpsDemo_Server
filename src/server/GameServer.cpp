@@ -87,6 +87,50 @@ void GameServer::Tick(float dt) {
         // - IsGrounded 在 KCC 中根据地面情况写回
         // - pendingButtons 在 NetworkInputMovementSource 中已被消费并清零
     }
+
+    // [M3-2.6] 基于定时器的 WorldSnapshot 广播
+
+    // 累积本帧 dt
+    _snapshotTimer += dt;
+
+    // 如果你希望“补帧”，可以用 while；如果不在乎补帧，用 if 也可以。
+    while (_snapshotTimer >= SNAPSHOT_INTERVAL_SEC)
+    {
+        _snapshotTimer -= SNAPSHOT_INTERVAL_SEC;
+        ++_serverTick;
+
+        // 1) 从当前所有玩家状态构造一个 WorldSnapshot
+        proto::WorldSnapshot snapshot{};
+        buildWorldSnapshot(snapshot);
+
+        // 2) 编码为 proto::Message
+        proto::Message msg{};
+        proto::EncodeWorldSnapshot(snapshot, msg);
+
+        // 3) 序列化为字节（和 handlePing 一样的写法）
+        std::vector<uint8_t> bytes;
+        bytes.reserve(msg.header.length);
+
+        proto::ByteWriter w(bytes);
+        w.writeU16(msg.header.length);
+        w.writeU16(msg.header.msgId);
+        w.writeU32(msg.header.seq);
+        bytes.insert(bytes.end(), msg.payload.begin(), msg.payload.end());
+
+        // 4) 对所有已连接客户端通过 UDP 广播
+        for (const auto& kv : _clients)
+        {
+            const uint32_t connId = kv.first;
+
+            OutgoingPacket pkt{};
+            pkt.isTcp        = false;        // 使用 UDP 发送
+            pkt.connectionId = connId;
+            pkt.bytes        = bytes;        // 复制一份，人数不多问题不大
+
+            _outgoing.push_back(std::move(pkt));
+        }
+    }
+
 }
 
 void GameServer::CollectOutgoing(std::vector<OutgoingPacket>& out)
@@ -272,4 +316,64 @@ bool GameServer::FindConnIdByPlayerId(uint32_t playerId, uint32_t& outConnId) co
     }
     return false;
 }
+
+// [M3-2.6] 从服务器内部状态构造 WorldSnapshot
+void GameServer::buildWorldSnapshot(proto::WorldSnapshot& outSnapshot)
+{
+    // 当前快照对应的服务器帧号
+    outSnapshot.serverTick = _serverTick;
+
+    outSnapshot.players.clear();
+    outSnapshot.players.reserve(_clients.size());
+
+    for (const auto& kv : _clients)
+    {
+        const ClientInfo& info = kv.second;
+        if (!info.hero)
+            continue;
+
+        const hero::HeroCore&  hero      = *info.hero;
+        const hero::HeroState& heroState = hero.GetState();
+        const movement::PlayerState& mv  = heroState.playerState;
+
+        proto::PlayerSnapshot ps{};
+
+        // 身份信息
+        ps.playerId = info.playerId;
+        ps.heroId   = static_cast<uint32_t>(heroState.HeroId);
+
+        // 位置 / 速度 / 朝向（kcc+movement 已经维护好的）
+        ps.posX = mv.Position.x;
+        ps.posY = mv.Position.y;
+        ps.posZ = mv.Position.z;
+
+        ps.velX = mv.Velocity.x;
+        ps.velY = mv.Velocity.y;
+        ps.velZ = mv.Velocity.z;
+
+        ps.yaw   = mv.Yaw;
+        ps.pitch = mv.Pitch;
+
+        // 简单的移动状态（先直接从 PlayerState 映射）
+        ps.locomotionState = mv.LocomotionState; // 0=Idle,1=Move（M3 简化）
+        ps.actionState     = 0;                  // M3 暂不区分动作状态
+
+        // 技能相关 / 状态旗标：M3 先全部占位 0
+        ps.activeSkillSlot  = 0;
+        ps.activeSkillPhase = 0;
+        ps.statusFlags      = 0;
+
+        // 血量与能量：从 HeroState 中取，简单 clamp 后转为 ushort。
+        float hp   = heroState.Hp;
+        float maxHp = heroState.MaxHp;
+        if (hp < 0.0f)     hp = 0.0f;
+        if (hp > maxHp)    hp = maxHp;
+
+        ps.health = static_cast<uint16_t>(hp);   // 假设 MaxHp 不超过 65535
+        ps.energy = 0;                           // 还没有能量系统，先 0
+
+        outSnapshot.players.push_back(ps);
+    }
+}
+
 

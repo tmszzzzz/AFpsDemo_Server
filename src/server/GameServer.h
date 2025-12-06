@@ -61,6 +61,11 @@ private:
 
     uint32_t _nextPlayerId = 1;
     uint32_t _serverTime   = 0; // 简单计数用作 serverTime
+
+    // [M3-2.6] 服务器帧序号与快照定时器
+    uint32_t _serverTick    = 0;    // 当前已经生成的快照帧号
+    float    _snapshotTimer = 0.0f; // 累积 dt，用于控制快照频率
+
     std::unordered_map<uint32_t, ClientInfo> _clients; // connId -> info
 
     std::vector<OutgoingPacket> _outgoing; // 每 tick 挤出来的待发包
@@ -68,6 +73,9 @@ private:
     void handleJoinRequest(uint32_t connectionId, const proto::Message& msg);
     void handlePing(uint32_t connectionId, const proto::Message& msg);
     void handleInputCommand(uint32_t connectionId, const proto::Message& msg);
+
+    // [M3-2.6] 构造 WorldSnapshot 的工具函数
+    void buildWorldSnapshot(proto::WorldSnapshot& outSnapshot);
 };
 
 
