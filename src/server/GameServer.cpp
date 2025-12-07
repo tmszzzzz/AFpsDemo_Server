@@ -162,7 +162,10 @@ void GameServer::handleJoinRequest(uint32_t connectionId, const proto::Message& 
 
     uint32_t playerId = _nextPlayerId++;
 
-    ClientInfo info{};
+
+    _clients[connectionId] = ClientInfo();
+
+    ClientInfo& info = _clients[connectionId];
     info.playerId = playerId;
 
     // 简单起见，先使用一组通用配置；后续可根据 heroId 做表驱动
@@ -196,7 +199,6 @@ void GameServer::handleJoinRequest(uint32_t connectionId, const proto::Message& 
     info.hero->AddMovementSource(netInputSource);
 
     info.lastInput.playerId = playerId;
-    _clients[connectionId] = std::move(info);
 
     std::cout << "JoinRequest from conn=" << connectionId
               << " name=" << req.playerName
