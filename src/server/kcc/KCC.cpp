@@ -133,6 +133,72 @@ namespace kcc
 
             // 2. 转到 OBB 局部空间
             Vec3 c0Local = WorldToObbLocal(obb, center);
+
+            // 初始重叠处理
+            // 如果一开始球就已经与 OBB 相交，则直接返回 t = 0 的命中，
+            // 法线从“盒子最近点 → 球心”的方向推导。
+            if (SphereOverlapsObb(center, radius, obb))
+            {
+                const Vec3& he = obb.halfExtents;
+
+                // 最近点（局部空间）：把 c0Local clamp 到盒子内
+                Vec3 closestLocal{
+                        std::max(-he.x, std::min(c0Local.x, he.x)),
+                        std::max(-he.y, std::min(c0Local.y, he.y)),
+                        std::max(-he.z, std::min(c0Local.z, he.z))
+                };
+
+                Vec3 nLocal = c0Local - closestLocal;
+                float lenSq = nLocal.dot(nLocal);
+
+                if (lenSq > 1e-6f)
+                {
+                    // 球心在盒子外或刚好在面附近：从最近点指向球心
+                    float invLen = 1.0f / std::sqrt(lenSq);
+                    nLocal = nLocal * invLen;
+                }
+                else
+                {
+                    // 球心在盒子内部：选择“到最近面的法线”
+                    float dx = he.x - std::fabs(c0Local.x);
+                    float dy = he.y - std::fabs(c0Local.y);
+                    float dz = he.z - std::fabs(c0Local.z);
+
+                    if (dx <= dy && dx <= dz)
+                    {
+                        nLocal = Vec3{ (c0Local.x >= 0.0f ? 1.0f : -1.0f), 0.0f, 0.0f };
+                    }
+                    else if (dy <= dz)
+                    {
+                        nLocal = Vec3{ 0.0f, (c0Local.y >= 0.0f ? 1.0f : -1.0f), 0.0f };
+                    }
+                    else
+                    {
+                        nLocal = Vec3{ 0.0f, 0.0f, (c0Local.z >= 0.0f ? 1.0f : -1.0f) };
+                    }
+                }
+
+                // 转回世界空间法线
+                Vec3 nWorld =
+                        axisX * nLocal.x +
+                        axisY * nLocal.y +
+                        axisZ * nLocal.z;
+                nWorld = nWorld.normalized();
+
+                // 命中点：取当前球心沿法线反向退回一个半径（球面上的接触点）
+                Vec3 hitWorld = center - nWorld * radius;
+
+                outHit.hasHit = true;
+                outHit.t      = 0.0f;
+                outHit.point  = hitWorld;
+                outHit.normal = nWorld;
+                outHit.obb    = &obb;
+                // outHit.walkable 由外层根据 obb.flags 填充
+
+                return true;
+            }
+            //初始重叠处理结束
+
             Vec3 dLocal{
                     delta.dot(axisX),
                     delta.dot(axisY),
@@ -240,59 +306,130 @@ namespace kcc
                                        Capsule&              capsule,
                                        const Settings&       settings)
         {
-            // 若不需要贴地或地面探测距离为 0，则直接返回
-            if (settings.groundSnapDistance <= 0.0f)
+            if (settings.maxPenetrationIterations == 0)
                 return;
 
-            // 目前若已经明确有可靠的 onGround，可以选择跳过 snap
-            // 这里保守起见：即使 onGround 为 true，也允许继续贴地以消除小缝隙
-
-            Vec3 down{0.0f, -1.0f, 0.0f};
-            float maxDist = settings.groundSnapDistance;
-
-            // 从胶囊底部球心开始，沿着 -Y 方向做一小段 sweep
-            Vec3 sphereStart = capsule.bottomCenter();
+            // 用于穿透检测的“有效半径”（减去 skin 宽度）
             float sphereRadius = std::max(0.0f, capsule.radius - settings.skinWidth);
-            Vec3 delta = down * maxDist;
+            if (sphereRadius <= 0.0f)
+                return;
 
-            bool  foundAny = false;
-            float bestDist = maxDist;
-            Hit   bestHit;
+            const auto& obbs = world.boxes;
 
-            for (const Obb& obb : world.boxes)
+            for (std::uint32_t iter = 0; iter < settings.maxPenetrationIterations; ++iter)
             {
-                Hit h;
-                bool hit = SweepSphereObb(sphereStart,
-                                          sphereRadius,
-                                          delta,
-                                          obb,
-                                          settings.sweepEpsilon,
-                                          h);
-                if (!hit || !h.hasHit)
-                    continue;
+                bool anyPenetration = false;
+                Vec3 totalCorrection = Vec3::zero();
 
-                float hitDist = maxDist * h.t;
-                if (hitDist < bestDist)
+                // 当前这一轮迭代下，近似胶囊的三个采样球心
+                Vec3 sphereCenters[3] = {
+                        capsule.topCenter(),
+                        capsule.center,
+                        capsule.bottomCenter()
+                };
+
+                // 遍历所有 OBB，累积“挤出向量”
+                for (const Obb& obb : obbs)
                 {
-                    bestDist = hitDist;
-                    bestHit  = h;
-                    bestHit.walkable = (obb.flags & 0x1u) != 0;
-                    foundAny = true;
-                }
+                    float bestDepthForObb = 0.0f;
+                    Vec3  bestNormalForObb = Vec3::zero();
+
+                    // 预先求出该 OBB 的局部轴，供后面 local->world 法线转换使用
+                    Vec3 axisX, axisY, axisZ;
+                    obb.rotation.ComputeObbAxesFromQuat(axisX, axisY, axisZ);
+
+                    for (const Vec3& sphereCenter : sphereCenters)
+                    {
+                        // 没有重叠就跳过
+                        if (!SphereOverlapsObb(sphereCenter, sphereRadius, obb))
+                            continue;
+
+                        // 计算 sphereCenter 在 OBB 局部空间的最近点与法线
+                        Vec3 cLocal = WorldToObbLocal(obb, sphereCenter);
+                        Vec3 closestLocal = ClosestPointOnBoxLocal(cLocal, obb.halfExtents);
+                        Vec3 diffLocal = cLocal - closestLocal;
+                        float distSq = diffLocal.sqrMagnitude();
+
+                        Vec3  nWorld = Vec3::zero();
+                        float penetrationDepth = 0.0f;
+
+                        if (distSq > 1e-6f)
+                        {
+                            // 球心在盒子外部：从最近点指向球心方向为法线
+                            float dist = std::sqrt(distSq);
+                            Vec3 nLocal = diffLocal * (1.0f / dist);
+
+                            nWorld =
+                                    axisX * nLocal.x +
+                                    axisY * nLocal.y +
+                                    axisZ * nLocal.z;
+                            nWorld = nWorld.normalized();
+
+                            // 球与盒子的穿透深度（>0 则有真正的穿透）
+                            penetrationDepth = sphereRadius - dist;
+                        }
+                        else
+                        {
+                            // 球心基本在盒子内部：选离最近面的方向作为法线
+                            const Vec3& he = obb.halfExtents;
+                            float dx = he.x - std::fabs(cLocal.x);
+                            float dy = he.y - std::fabs(cLocal.y);
+                            float dz = he.z - std::fabs(cLocal.z);
+
+                            Vec3 nLocal{0.0f, 0.0f, 0.0f};
+                            float minInside = dx;
+                            int   axis = 0; // 0=x,1=y,2=z
+
+                            if (dy < minInside) { minInside = dy; axis = 1; }
+                            if (dz < minInside) { minInside = dz; axis = 2; }
+
+                            if (axis == 0)
+                                nLocal.x = (cLocal.x >= 0.0f ? 1.0f : -1.0f);
+                            else if (axis == 1)
+                                nLocal.y = (cLocal.y >= 0.0f ? 1.0f : -1.0f);
+                            else
+                                nLocal.z = (cLocal.z >= 0.0f ? 1.0f : -1.0f);
+
+                            nWorld =
+                                    axisX * nLocal.x +
+                                    axisY * nLocal.y +
+                                    axisZ * nLocal.z;
+                            nWorld = nWorld.normalized();
+
+                            // 球心在内部时，向最近面的外侧推：半径 + 距离面内的距离
+                            penetrationDepth = sphereRadius + std::max(0.0f, minInside);
+                        }
+
+                        if (penetrationDepth <= 0.0f)
+                            continue;
+
+                        // 对同一个 OBB，取“最深的穿透方向”
+                        if (penetrationDepth > bestDepthForObb)
+                        {
+                            bestDepthForObb   = penetrationDepth;
+                            bestNormalForObb  = nWorld;
+                        }
+                    } // for sphereCenters
+
+                    if (bestDepthForObb > 0.0f)
+                    {
+                        anyPenetration = true;
+                        float pushDist = bestDepthForObb + settings.penetrationEpsilon;
+                        totalCorrection += bestNormalForObb * pushDist;
+                    }
+                } // for obbs
+
+                if (!anyPenetration)
+                    break;
+
+                // 如果累计修正已经很小，就认为基本稳定了
+                if (totalCorrection.sqrMagnitude() <=
+                    settings.penetrationEpsilon * settings.penetrationEpsilon)
+                    break;
+
+                // 应用这一轮的总挤出向量
+                capsule.center += totalCorrection;
             }
-
-            if (!foundAny)
-                return;
-
-            // 必须是可行走表面，且法线坡度在可接受范围内
-            if (!bestHit.walkable)
-                return;
-
-            if (!IsGroundNormal(bestHit.normal, settings.maxSlopeAngleDeg))
-                return;
-
-            // 将胶囊整体沿 -Y 推到命中点位置（减去 skin 宽度相当于球的半径调整）
-            capsule.center += down * bestDist;
         }
 
         // 沿给定位移 delta 对所有 OBB 做 sweep，找出最早一次碰撞。
