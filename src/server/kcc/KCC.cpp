@@ -253,6 +253,30 @@ namespace kcc
             else if (hitAxis == 2)
                 nLocal.z = (dLocal.z > 0.0f) ? -1.0f : 1.0f;
 
+            // ==== 命中轴缺失 / t≈0 的备用局部法线 ====
+            // 当 hitAxis 仍为 -1（例如起点在扩展盒面上）时，从 hitLocal 与 ext 计算一条稳健的面法线。
+            if (hitAxis < 0)
+            {
+                // 使用扩展后的 ext，在局部空间中选“距离最近的面”作为法线方向
+                float dx = ext.x - std::fabs(hitLocal.x);
+                float dy = ext.y - std::fabs(hitLocal.y);
+                float dz = ext.z - std::fabs(hitLocal.z);
+
+                if (dx <= dy && dx <= dz)
+                {
+                    nLocal = Vec3{ (hitLocal.x >= 0.0f ? 1.0f : -1.0f), 0.0f, 0.0f };
+                }
+                else if (dy <= dz)
+                {
+                    nLocal = Vec3{ 0.0f, (hitLocal.y >= 0.0f ? 1.0f : -1.0f), 0.0f };
+                }
+                else
+                {
+                    nLocal = Vec3{ 0.0f, 0.0f, (hitLocal.z >= 0.0f ? 1.0f : -1.0f) };
+                }
+            }
+            // ==== 命中轴缺失 / t≈0 的备用局部法线 结束 ====
+
             // 5. 转回世界空间
             Vec3 hitWorld = ObbLocalToWorld(obb, hitLocal);
             Vec3 nWorld   =
@@ -260,6 +284,25 @@ namespace kcc
                     axisY * nLocal.y +
                     axisZ * nLocal.z;
             nWorld = nWorld.normalized();
+
+            // ==== t≈0 & 朝外/平行运动：视为无碰撞 ====
+            // 将非常靠近 0 的 t 视作“起点已在接触状态”，用 delta·n 决定是否真的算碰撞。
+            {
+                const float contactEps = 1e-4f;  // 你可根据步长调整
+                if (std::fabs(t0) <= contactEps)
+                {
+                    // normal 约定为“从 OBB 指向球外侧”
+                    float vDotN = delta.dot(nWorld);
+
+                    // vDotN >= 0：当前步在“离开碰撞体”或“纯切向运动”，
+                    // 不应阻挡这一帧的运动，对该 OBB 视为“无碰撞”。
+                    if (vDotN >= 0.0f)
+                        return false;
+
+                    // vDotN < 0：从接触状态继续往里挤，保留本次 hit 由上层做 slide。
+                }
+            }
+            // ==== & 朝外/平行运动：视为无碰撞 结束 ====
 
             outHit.hasHit = true;
             outHit.t      = t0;
