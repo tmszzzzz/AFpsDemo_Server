@@ -134,71 +134,6 @@ namespace kcc
             // 2. 转到 OBB 局部空间
             Vec3 c0Local = WorldToObbLocal(obb, center);
 
-            // 初始重叠处理
-            // 如果一开始球就已经与 OBB 相交，则直接返回 t = 0 的命中，
-            // 法线从“盒子最近点 → 球心”的方向推导。
-            if (SphereOverlapsObb(center, radius, obb))
-            {
-                const Vec3& he = obb.halfExtents;
-
-                // 最近点（局部空间）：把 c0Local clamp 到盒子内
-                Vec3 closestLocal{
-                        std::max(-he.x, std::min(c0Local.x, he.x)),
-                        std::max(-he.y, std::min(c0Local.y, he.y)),
-                        std::max(-he.z, std::min(c0Local.z, he.z))
-                };
-
-                Vec3 nLocal = c0Local - closestLocal;
-                float lenSq = nLocal.dot(nLocal);
-
-                if (lenSq > 1e-6f)
-                {
-                    // 球心在盒子外或刚好在面附近：从最近点指向球心
-                    float invLen = 1.0f / std::sqrt(lenSq);
-                    nLocal = nLocal * invLen;
-                }
-                else
-                {
-                    // 球心在盒子内部：选择“到最近面的法线”
-                    float dx = he.x - std::fabs(c0Local.x);
-                    float dy = he.y - std::fabs(c0Local.y);
-                    float dz = he.z - std::fabs(c0Local.z);
-
-                    if (dx <= dy && dx <= dz)
-                    {
-                        nLocal = Vec3{ (c0Local.x >= 0.0f ? 1.0f : -1.0f), 0.0f, 0.0f };
-                    }
-                    else if (dy <= dz)
-                    {
-                        nLocal = Vec3{ 0.0f, (c0Local.y >= 0.0f ? 1.0f : -1.0f), 0.0f };
-                    }
-                    else
-                    {
-                        nLocal = Vec3{ 0.0f, 0.0f, (c0Local.z >= 0.0f ? 1.0f : -1.0f) };
-                    }
-                }
-
-                // 转回世界空间法线
-                Vec3 nWorld =
-                        axisX * nLocal.x +
-                        axisY * nLocal.y +
-                        axisZ * nLocal.z;
-                nWorld = nWorld.normalized();
-
-                // 命中点：取当前球心沿法线反向退回一个半径（球面上的接触点）
-                Vec3 hitWorld = center - nWorld * radius;
-
-                outHit.hasHit = true;
-                outHit.t      = 0.0f;
-                outHit.point  = hitWorld;
-                outHit.normal = nWorld;
-                outHit.obb    = &obb;
-                // outHit.walkable 由外层根据 obb.flags 填充
-
-                return true;
-            }
-            //初始重叠处理结束
-
             Vec3 dLocal{
                     delta.dot(axisX),
                     delta.dot(axisY),
@@ -726,7 +661,7 @@ namespace kcc
             result.groundObject = bestGroundObb;
         }
 
-        DoGroundSnap(world, capsule, settings, result);
+        if(desiredDelta.y < 0) DoGroundSnap(world, capsule, settings, result);
 
         result.appliedDisplacement = capsule.center - originalCenter;
         return result;

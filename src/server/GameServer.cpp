@@ -55,7 +55,7 @@ void GameServer::Tick(float dt) {
     // 2. 准备 KCC 设置和胶囊体参数（当前版本所有英雄共用一份）
     static kcc::Settings s_kccSettings{};
     static const float kCapsuleRadius     = 0.5f;
-    static const float kCapsuleHalfHeight = 0.9f;
+    static const float kCapsuleHalfHeight = 0.5f;
 
     // 3. 遍历所有玩家，驱动 HeroCore + KCC
     for (auto& kv : _clients) {

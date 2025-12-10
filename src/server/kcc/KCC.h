@@ -65,7 +65,7 @@ namespace kcc
         float maxStepDistance = 3.0f;
 
         // 最大可站立坡度角（度数）。例如 45 度以内视为 ground。
-        float maxSlopeAngleDeg = 60.0f;
+        float maxSlopeAngleDeg = 45.0f;
 
         // 贴地距离：角色在空中但脚底非常接近地面时，会尝试向下 snap。
         float groundSnapDistance = 0.2f;
