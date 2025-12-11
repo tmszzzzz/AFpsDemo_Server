@@ -12,8 +12,7 @@
 #include "../gameplay/movement/core/PlayerState.h"
 
 // 可以单独开一个命名空间，避免和 movement 混在一起
-namespace kcc
-{
+namespace kcc {
     /// 胶囊体定义：竖直对齐 Y 轴
     ///
     /// 约定：center 为“胶囊中轴线的中心点”，
@@ -25,34 +24,32 @@ namespace kcc
     /// - 半径为 radius
     ///
     /// 这样就和 PlayerState.Position 作为“角色几何中心”很容易对应上。
-    struct Capsule
-    {
-        Vec3  center;      // 世界空间
+    struct Capsule {
+        Vec3 center;      // 世界空间
         float radius = 0.5f;
         float halfHeight = 0.9f;
 
         // 计算上/下端球心（后面几何函数会用到）
-        Vec3 topCenter() const    { return Vec3{center.x, center.y + halfHeight, center.z}; }
+        Vec3 topCenter() const { return Vec3{center.x, center.y + halfHeight, center.z}; }
+
         Vec3 bottomCenter() const { return Vec3{center.x, center.y - halfHeight, center.z}; }
     };
 
     /// 移动命中的一次碰撞信息（内部使用）
-    struct Hit
-    {
-        bool  hasHit = false;
+    struct Hit {
+        bool hasHit = false;
 
         float t = 1.0f;    // 沿 sweep 向量的归一化时间 [0, 1]
-        Vec3  point;       // 碰撞点（世界空间）
-        Vec3  normal;      // 碰撞法线（世界空间，单位向量）
+        Vec3 point;       // 碰撞点（世界空间）
+        Vec3 normal;      // 碰撞法线（世界空间，单位向量）
 
-        const Obb* obb = nullptr; // 命中的 OBB
+        const Obb *obb = nullptr; // 命中的 OBB
 
-        bool  walkable = false;   // 是否可站立（根据 obb->flags 推导）
+        bool walkable = false;   // 是否可站立（根据 obb->flags 推导）
     };
 
     /// KCC 行为调节参数
-    struct Settings
-    {
+    struct Settings {
         // 主循环最多迭代次数（防止在狭缝里死循环）
         std::uint32_t maxIterations = 4;
 
@@ -75,21 +72,22 @@ namespace kcc
 
         // 穿透修正相关
         std::uint32_t maxPenetrationIterations = 4;
-        float         penetrationEpsilon       = 0.001f;
+        float penetrationEpsilon = 0.001f;
 
         // 数值稳定相关 epsilon
         float sweepEpsilon = 1e-4f;
     };
 
     /// 调用一次 KCC 移动的结果
-    struct MoveResult
-    {
+    struct MoveResult {
         Vec3 appliedDisplacement = Vec3::zero(); // 实际应用的位移（pos_final - pos_original）
 
         bool onGround = false;                   // 是否着地
         Vec3 groundNormal = Vec3{0, 1, 0};       // 地面法线（如果 onGround）
 
-        const Obb* groundObject = nullptr;       // 当前地面对应的碰撞体（可选）
+        const Obb *groundObject = nullptr;       // 当前地面对应的碰撞体（可选）
+
+        std::vector<Vec3> blockingNormals;       // 本帧中参与“阻挡”的碰撞法线集合
     };
 
     /// KCC 主接口（胶囊版本）
@@ -103,10 +101,10 @@ namespace kcc
     /// 输出：
     ///   - capsule.center 会被更新到最终位置
     ///   - 返回 MoveResult，包含实际位移 & ground 状态
-    MoveResult MoveCapsule(const collision::CollisionWorld& world,
-                           Capsule&              capsule,
-                           const Vec3&           desiredDelta,
-                           const Settings&       settings);
+    MoveResult MoveCapsule(const collision::CollisionWorld &world,
+                           Capsule &capsule,
+                           const Vec3 &desiredDelta,
+                           const Settings &settings);
 
     /// 一个方便给 gameplay 用的薄封装：直接基于 PlayerState 操作。
     ///
@@ -115,21 +113,32 @@ namespace kcc
     ///   - 胶囊的 radius/halfHeight 由形参给出（不同英雄可以不同）
     ///   - state.IsGrounded 由结果回写
     ///
-    inline MoveResult MovePlayer(const collision::CollisionWorld& world,
-                                 movement::PlayerState& state,
-                                 const Vec3&           desiredDelta,
-                                 const Settings&       settings,
+    inline MoveResult MovePlayer(const collision::CollisionWorld &world,
+                                 movement::PlayerState &state,
+                                 const Vec3 &desiredDelta,
+                                 const Settings &settings,
                                  float capsuleRadius,
-                                 float capsuleHalfHeight)
-    {
+                                 float capsuleHalfHeight) {
         Capsule capsule;
-        capsule.center     = state.Position;
-        capsule.radius     = capsuleRadius;
+        capsule.center = state.Position;
+        capsule.radius = capsuleRadius;
         capsule.halfHeight = capsuleHalfHeight;
 
         MoveResult result = MoveCapsule(world, capsule, desiredDelta, settings);
 
-        state.Position   = capsule.center;
+        //Vec3 v = state.Velocity;
+//
+        //for (const Vec3 &n: result.blockingNormals) {
+        //    float vn = v.dot(n);
+        //    if (vn < 0.0f) {
+        //        // 把沿法线“往里挤”的速度分量剪掉：v' = v - n * vn
+        //        v = v - n * vn;
+        //    }
+        //}
+//
+        //state.Velocity = v;
+
+        state.Position = capsule.center;
         state.IsGrounded = result.onGround;
 
         return result;

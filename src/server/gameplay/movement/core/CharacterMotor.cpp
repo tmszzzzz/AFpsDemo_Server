@@ -88,11 +88,7 @@ namespace movement
         }
 
         // 3.3 重力
-        if (state.IsGrounded)
-        {
-            //if (v.y <= 0.0f) v.y = -5.0f; // 简单“地面吸附” //已弃用，使用kcc的贴地snap
-        }
-        else
+        if (!state.IsGrounded && v.y > -15.0f)
         {
             v.y -= Gravity * deltaTime;
         }

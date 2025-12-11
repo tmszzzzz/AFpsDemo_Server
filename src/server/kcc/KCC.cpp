@@ -616,6 +616,13 @@ namespace kcc
                     break;
                 }
 
+                // 记录这一帧中对运动产生“阻挡”的碰撞法线
+                if (hit.normal.sqrMagnitude() > 1e-6f)
+                {
+                    // hit.normal 已在 Sweep 中归一化，这里仅做一个非零检查
+                    result.blockingNormals.push_back(hit.normal);
+                }
+
                 // 移动到碰撞点前一小步（减去 skinWidth）
                 float moveT = hit.t;
                 if (moveT < 0.0f) moveT = 0.0f;
@@ -661,7 +668,7 @@ namespace kcc
             result.groundObject = bestGroundObb;
         }
 
-        if(desiredDelta.y <= 0.0f) DoGroundSnap(world, capsule, settings, result);
+        if (desiredDelta.y <= 0.0f) DoGroundSnap(world, capsule, settings, result);
 
         result.appliedDisplacement = capsule.center - originalCenter;
         return result;
