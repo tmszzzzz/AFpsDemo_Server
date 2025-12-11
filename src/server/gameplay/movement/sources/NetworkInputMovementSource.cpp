@@ -62,7 +62,7 @@ namespace movement
         }
 
         // 3. 按钮型事件：使用 pendingButtons 做“一帧 OR”，消费后清零
-        if (btn & BUTTON_JUMP)
+        if (state.IsGrounded && (btn & BUTTON_JUMP))
         {
             command.VelocityImpulse.y += _jumpSpeed;
         }

@@ -661,7 +661,7 @@ namespace kcc
             result.groundObject = bestGroundObb;
         }
 
-        if(desiredDelta.y < 0) DoGroundSnap(world, capsule, settings, result);
+        if(desiredDelta.y <= 0.0f) DoGroundSnap(world, capsule, settings, result);
 
         result.appliedDisplacement = capsule.center - originalCenter;
         return result;
