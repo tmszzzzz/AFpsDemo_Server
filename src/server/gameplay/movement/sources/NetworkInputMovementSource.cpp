@@ -8,7 +8,6 @@
 
 namespace movement
 {
-    constexpr float DEG2RAD = 3.1415926535f / 180.0f;
 
     void NetworkInputMovementSource::UpdateSource(const PlayerState& state,
                                                   MovementCommand&   command,

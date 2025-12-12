@@ -105,4 +105,7 @@ static constexpr uint32_t BUTTON_HIT_V = 1u << 7;
 // 20Hz 世界快照（0.05 秒一帧）
 constexpr float SNAPSHOT_INTERVAL_SEC = 0.05f;
 
+// 角度弧度转换
+constexpr float DEG2RAD = 3.1415926535f / 180.0f;
+
 #endif //DEMO0_SERVER_UTILS_H

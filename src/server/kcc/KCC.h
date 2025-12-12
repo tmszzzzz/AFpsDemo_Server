@@ -65,7 +65,7 @@ namespace kcc {
         float maxSlopeAngleDeg = 45.0f;
 
         // 贴地距离：角色在空中但脚底非常接近地面时，会尝试向下 snap。
-        float groundSnapDistance = 0.2f;
+        float groundSnapDistance = 0.5f;
 
         // 碰撞后 slide 的最小速度阈值（太小就认为停下）
         float minSlideSpeed = 0.01f;
@@ -76,6 +76,13 @@ namespace kcc {
 
         // 数值稳定相关 epsilon
         float sweepEpsilon = 1e-4f;
+
+        // Step-Up（台阶跨越）参数
+        float maxStepHeight      = 0.5f;   // 最大可跨越台阶高度
+        float stepUpEps          = 0.01f;  // 抬升时预留（避免顶到天花板/贴边抖动）
+        float stepForwardEps     = 0.01f;  // 前进 sweep 时收缩一点，避免 t=0 反复命中
+        float stepDownExtra      = 0.05f;  // 下落 sweep 额外距离（保证能“落到台阶面”）
+        float stepWallMaxNormalY = 0.2f;   // 触发 step 的墙体判据：|n.y| <= 该值
     };
 
     /// 调用一次 KCC 移动的结果

@@ -550,7 +550,90 @@ namespace kcc
             inOutResult.groundNormal = bestHit.normal;
             inOutResult.groundObject = bestHit.obb;
         }
-    } // namespace
+    }
+
+    // 将向量投影到平面（法线为 n，假定 n 已归一化或近似归一化）
+    static inline Vec3 ProjectOnPlane(const Vec3& v, const Vec3& n)
+    {
+        return v - n * v.dot(n);
+    }
+
+    // Step-Up：允许“受天花板限制的部分抬升”，且必须落到 walkable 面（无落脚点则不爬升）
+    static bool TryStepUp(const collision::CollisionWorld& world,
+                          kcc::Capsule& capsuleInOut,
+                          const Vec3& desiredDelta,
+                          const kcc::Settings& settings)
+    {
+        if (settings.maxStepHeight <= 0.0f)
+            return false;
+
+        const Vec3 up{0.0f, 1.0f, 0.0f};
+
+        // 仅对水平“前进意图”尝试 step
+        Vec3 forward = ProjectOnPlane(desiredDelta, up);
+        float fwdLen = forward.magnitude();
+        if (fwdLen <= 1e-6f)
+            return false;
+
+        // 前进距离缩短一点，避免贴边 t=0 震荡
+        float shrink = std::min(settings.stepForwardEps, fwdLen);
+        Vec3  fwdDir = forward * (1.0f / fwdLen);
+        Vec3  fwdDelta = fwdDir * (fwdLen - shrink);
+        if (fwdDelta.sqrMagnitude() <= 1e-8f)
+            return false;
+
+        // ---------- A) Up sweep：计算可抬升高度 raise（<= maxStepHeight） ----------
+        float raise = settings.maxStepHeight;
+
+        {
+            Hit upHit;
+            Vec3 upDelta = up * settings.maxStepHeight;
+
+            bool hasUpHit = SweepAndFindFirstHit(world, capsuleInOut, upDelta, settings, upHit);
+            if (hasUpHit && upHit.hasHit)
+            {
+                // 允许部分抬升：raise = t * H - eps
+                raise = upHit.t * settings.maxStepHeight - settings.stepUpEps;
+            }
+        }
+
+        // 无 stepMinRaise：只要 raise > 0 就继续（raise<=0 代表根本抬不起来）
+        if (raise <= 0.0f)
+            return false;
+
+        capsuleInOut.center += up * raise;
+
+        // ---------- B) Forward sweep：在抬升后高度尝试前进 ----------
+        {
+            Hit fwdHit;
+            bool hasFwdHit = SweepAndFindFirstHit(world, capsuleInOut, fwdDelta, settings, fwdHit);
+            if (hasFwdHit && fwdHit.hasHit)
+                return false;
+        }
+
+        capsuleInOut.center += fwdDelta;
+
+        // ---------- C) Down sweep：必须落到 walkable 面（无落脚点则不爬升） ----------
+        {
+            float downDist = raise + settings.stepDownExtra + settings.groundSnapDistance;
+            Vec3  downDelta = Vec3{0.0f, -downDist, 0.0f};
+
+            Hit downHit;
+            bool hasDownHit = SweepAndFindFirstHit(world, capsuleInOut, downDelta, settings, downHit);
+            if (!(hasDownHit && downHit.hasHit))
+                return false;
+
+            // 必须是可站立面，否则 step 失败（避免沿墙“爬升”）
+            if (!downHit.walkable || !IsGroundNormal(downHit.normal, settings.maxSlopeAngleDeg))
+                return false;
+
+            // 用 delta*t 回推中心位置（不依赖 downHit.point 的语义）
+            capsuleInOut.center += downDelta * downHit.t;
+        }
+
+        return true;
+    }
+
 
 
     MoveResult MoveCapsule(const collision::CollisionWorld& world,
@@ -614,6 +697,29 @@ namespace kcc
                     // 完整走完 stepRemaining
                     capsule.center += stepRemaining;
                     break;
+                }
+                else if (settings.maxStepHeight > 0.0f)
+                {
+                    float nyAbs = std::fabs(hit.normal.y);
+                    bool looksLikeWall = (nyAbs <= settings.stepWallMaxNormalY);
+
+                    Vec3 forward = ProjectOnPlane(stepRemaining, Vec3{0.0f, 1.0f, 0.0f});
+                    bool hasForward = (forward.sqrMagnitude() > 1e-8f);
+
+                    if (looksLikeWall && hasForward)
+                    {
+                        Capsule stepCapsule = capsule; // 用副本尝试，失败不影响原状态
+
+                        if (TryStepUp(world, stepCapsule, stepRemaining, settings))
+                        {
+                            // Step 成功：直接采用 step 后的位置
+                            capsule = stepCapsule;
+
+                            // 简化策略：本小步直接视为完成（避免同一帧多次 step 导致行为怪异）
+                            stepRemaining = Vec3::zero();
+                            break;
+                        }
+                    }
                 }
 
                 // 记录这一帧中对运动产生“阻挡”的碰撞法线
