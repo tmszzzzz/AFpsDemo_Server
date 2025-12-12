@@ -82,7 +82,6 @@ namespace kcc {
         float stepUpEps          = 0.01f;  // 抬升时预留（避免顶到天花板/贴边抖动）
         float stepForwardEps     = 0.01f;  // 前进 sweep 时收缩一点，避免 t=0 反复命中
         float stepDownExtra      = 0.05f;  // 下落 sweep 额外距离（保证能“落到台阶面”）
-        float stepWallMaxNormalY = 0.2f;   // 触发 step 的墙体判据：|n.y| <= 该值
     };
 
     /// 调用一次 KCC 移动的结果

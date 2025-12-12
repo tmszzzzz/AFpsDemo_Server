@@ -700,8 +700,9 @@ namespace kcc
                 }
                 else if (settings.maxStepHeight > 0.0f)
                 {
+                    // 台阶爬升判断
                     float nyAbs = std::fabs(hit.normal.y);
-                    bool looksLikeWall = (nyAbs <= settings.stepWallMaxNormalY);
+                    bool looksLikeWall = (nyAbs <= cos(settings.maxSlopeAngleDeg));
 
                     Vec3 forward = ProjectOnPlane(stepRemaining, Vec3{0.0f, 1.0f, 0.0f});
                     bool hasForward = (forward.sqrMagnitude() > 1e-8f);
