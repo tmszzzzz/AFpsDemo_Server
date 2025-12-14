@@ -76,6 +76,9 @@ private:
 
     // [M3-2.6] 构造 WorldSnapshot 的工具函数
     void buildWorldSnapshot(proto::WorldSnapshot& outSnapshot);
+
+    // GameEvent 广播
+    void BroadcastGameEvent(const proto::GameEvent& ev, bool reliableTcp = false);
 };
 
 

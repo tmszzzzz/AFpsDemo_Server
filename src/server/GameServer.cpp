@@ -378,4 +378,33 @@ void GameServer::buildWorldSnapshot(proto::WorldSnapshot& outSnapshot)
     }
 }
 
+void GameServer::BroadcastGameEvent(const proto::GameEvent& ev, bool reliableTcp)
+{
+    proto::Message msg{};
+    proto::EncodeGameEvent(ev, msg);
+
+    // 序列化为字节（头 + payload）
+    std::vector<uint8_t> bytes;
+    bytes.reserve(msg.header.length);
+
+    proto::ByteWriter w(bytes);
+    w.writeU16(msg.header.length);
+    w.writeU16(msg.header.msgId);
+    w.writeU32(msg.header.seq);
+    bytes.insert(bytes.end(), msg.payload.begin(), msg.payload.end());
+
+    // 对所有已连接客户端广播
+    for (const auto& kv : _clients)
+    {
+        const uint32_t connId = kv.first;
+
+        OutgoingPacket pkt{};
+        pkt.isTcp        = reliableTcp; // [diff] 可选：关键事件走 TCP
+        pkt.connectionId = connId;
+        pkt.bytes        = bytes;
+
+        _outgoing.push_back(std::move(pkt));
+    }
+}
+
 
