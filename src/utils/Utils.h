@@ -103,6 +103,23 @@ static constexpr KeyCode BUTTON_SKILL_SHIFT = 1u << 5;
 static constexpr KeyCode BUTTON_SKILL_CTRL = 1u << 6;
 static constexpr KeyCode BUTTON_HIT_V = 1u << 7;
 
+inline bool GetKeyDown(uint32_t buttonsThisTick, uint32_t buttonsDown, uint32_t prevButtonsDown, KeyCode keyMask)
+{
+    return (buttonsThisTick & keyMask) != 0;
+}
+
+inline bool GetKey(uint32_t buttonsThisTick, uint32_t buttonsDown, uint32_t prevButtonsDown, KeyCode keyMask)
+{
+    return (buttonsDown & keyMask) != 0;
+}
+
+inline bool GetKeyUp(uint32_t buttonsThisTick, uint32_t buttonsDown, uint32_t prevButtonsDown, KeyCode keyMask)
+{
+    const bool wasDown = (prevButtonsDown & keyMask) != 0;
+    const bool isDown  = (buttonsDown & keyMask) != 0;
+    return wasDown && !isDown;
+}
+
 // 20Hz 世界快照（0.05 秒一帧）
 constexpr float SNAPSHOT_INTERVAL_SEC = 0.05f;
 

@@ -16,7 +16,7 @@
 namespace movement
 {
     /// 基于网络 InputCommand 的运动源：
-    /// - 读取某个 NetInputBuffer（lastInput + pendingButtons）
+    /// - 读取某个 NetInputBuffer（lastInput + buttonsThisTick）
     /// - 为本帧 MovementCommand 贡献移动 / 视角 / 跳跃等
     class NetworkInputMovementSource : public IMovementSource
     {
@@ -24,7 +24,8 @@ namespace movement
         struct NetInputBuffer
         {
             proto::InputCommand* lastInput   = nullptr; // 始终指向“最新输入状态”
-            const uint32_t*            pendingButtons = nullptr; // 自上次 Tick 以来 OR 的按键
+            const uint32_t* buttonsThisTick = nullptr;
+            const uint32_t* pendingButtons = nullptr;
         };
 
         explicit NetworkInputMovementSource(NetInputBuffer buffer)
@@ -34,7 +35,7 @@ namespace movement
         bool IsActive() const override
         {
             // 网络输入源一直是活跃的，只要绑定了缓冲
-            return _buffer.lastInput != nullptr && _buffer.pendingButtons != nullptr;
+            return _buffer.lastInput != nullptr && _buffer.buttonsThisTick != nullptr;
         }
 
         bool AutoRemoveWhenInactive() const override

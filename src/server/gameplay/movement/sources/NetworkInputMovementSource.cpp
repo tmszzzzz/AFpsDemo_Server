@@ -13,11 +13,12 @@ namespace movement
                                                   MovementCommand&   command,
                                                   float              deltaTime)
     {
-        if (!_buffer.lastInput || !_buffer.pendingButtons || deltaTime <= 0.0f)
+        if (!_buffer.lastInput || !_buffer.buttonsThisTick || deltaTime <= 0.0f)
             return;
 
         proto::InputCommand& ic  = *_buffer.lastInput;
-        const uint32_t btn = *_buffer.pendingButtons;
+        const uint32_t btn = *_buffer.buttonsThisTick;
+        const uint32_t pbt = *_buffer.pendingButtons;
 
         // 1. 平面移动：使用 moveX/moveY + 当前 Yaw 计算期望水平速度
         float h = ic.moveX; // -1..1
@@ -60,8 +61,8 @@ namespace movement
             command.LookDeltaPitch += pitchDelta;
         }
 
-        // 3. 按钮型事件：使用 pendingButtons 做“一帧 OR”，消费后清零
-        if (state.IsGrounded && (btn & BUTTON_JUMP))
+        // 3. 按钮型事件：使用 buttonsThisTick 做“一帧 OR”，消费后清零
+        if (state.IsGrounded && GetKeyDown(btn,pbt,ic.buttonMask,BUTTON_JUMP))
         {
             command.VelocityImpulse.y += _jumpSpeed;
         }

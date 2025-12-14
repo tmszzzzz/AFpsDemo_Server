@@ -194,7 +194,8 @@ void GameServer::handleJoinRequest(uint32_t connectionId, const proto::Message& 
     // 为这个 Hero 挂一个 NetworkInputMovementSource
     movement::NetworkInputMovementSource::NetInputBuffer buffer{};
     buffer.lastInput      = &info.lastInput;
-    buffer.pendingButtons = &info.buttonsThisTick;
+    buffer.buttonsThisTick = &info.buttonsThisTick;
+    buffer.pendingButtons = &info.pendingButtons;
 
     auto netInputSource =
             std::make_shared<movement::NetworkInputMovementSource>(buffer);

@@ -50,7 +50,7 @@ private:
 
         // 网络输入缓冲：
         // - lastInput 表示“最新一帧输入状态”
-        // - pendingButtons 自上次 Tick 以来 OR 的“按钮事件”
+        // - buttonsThisTick 自上次 Tick 以来 OR 的“按钮事件”
         // - buttonsThisTick 本 Tick 的按钮边沿快照 相当于pendingButtons的瞬时只读副本
         proto::InputCommand lastInput{};
         uint32_t            pendingButtons = 0;
