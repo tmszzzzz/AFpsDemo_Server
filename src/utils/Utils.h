@@ -93,14 +93,15 @@ struct Aabb
 
 
 // server端统一定义按键编码
-static constexpr uint32_t MOUSE_FIRE_PRI = 1u << 0;
-static constexpr uint32_t MOUSE_FIRE_SEC = 1u << 1;
-static constexpr uint32_t BUTTON_JUMP = 1u << 2;
-static constexpr uint32_t BUTTON_ULTRA = 1u << 3;
-static constexpr uint32_t BUTTON_SKILL_E = 1u << 4;
-static constexpr uint32_t BUTTON_SKILL_SHIFT = 1u << 5;
-static constexpr uint32_t BUTTON_SKILL_CTRL = 1u << 6;
-static constexpr uint32_t BUTTON_HIT_V = 1u << 7;
+typedef uint32_t KeyCode;
+static constexpr KeyCode MOUSE_FIRE_PRI = 1u << 0;
+static constexpr KeyCode MOUSE_FIRE_SEC = 1u << 1;
+static constexpr KeyCode BUTTON_JUMP = 1u << 2;
+static constexpr KeyCode BUTTON_ULTRA = 1u << 3;
+static constexpr KeyCode BUTTON_SKILL_E = 1u << 4;
+static constexpr KeyCode BUTTON_SKILL_SHIFT = 1u << 5;
+static constexpr KeyCode BUTTON_SKILL_CTRL = 1u << 6;
+static constexpr KeyCode BUTTON_HIT_V = 1u << 7;
 
 // 20Hz 世界快照（0.05 秒一帧）
 constexpr float SNAPSHOT_INTERVAL_SEC = 0.05f;

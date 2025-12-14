@@ -24,7 +24,7 @@ namespace movement
         struct NetInputBuffer
         {
             proto::InputCommand* lastInput   = nullptr; // 始终指向“最新输入状态”
-            uint32_t*            pendingButtons = nullptr; // 自上次 Tick 以来 OR 的按键
+            const uint32_t*            pendingButtons = nullptr; // 自上次 Tick 以来 OR 的按键
         };
 
         explicit NetworkInputMovementSource(NetInputBuffer buffer)

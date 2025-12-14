@@ -17,7 +17,7 @@ namespace movement
             return;
 
         proto::InputCommand& ic  = *_buffer.lastInput;
-        uint32_t&            btn = *_buffer.pendingButtons;
+        const uint32_t btn = *_buffer.pendingButtons;
 
         // 1. 平面移动：使用 moveX/moveY + 当前 Yaw 计算期望水平速度
         float h = ic.moveX; // -1..1
@@ -65,9 +65,6 @@ namespace movement
         {
             command.VelocityImpulse.y += _jumpSpeed;
         }
-
-        // 本帧消费完 pendingButtons，清零 → 下一个 Tick 只看新到的按钮
-        btn = 0;
     }
 }
 
