@@ -65,7 +65,7 @@ namespace movement
         }
 
         // 3. 按钮型事件：使用 buttonsThisTick 做“一帧 OR”，消费后清零
-        if (state.IsGrounded && GetKeyUp(buttonsThisTick, buttonsDown, prevButtonsDown, BUTTON_JUMP))
+        if (state.IsGrounded && GetKeyDown(buttonsThisTick, buttonsDown, prevButtonsDown, BUTTON_JUMP))
         {
             command.VelocityImpulse.y += _jumpSpeed;
         }
