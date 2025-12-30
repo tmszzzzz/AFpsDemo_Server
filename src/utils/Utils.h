@@ -102,6 +102,7 @@ static constexpr KeyCode BUTTON_SKILL_E = 1u << 4;
 static constexpr KeyCode BUTTON_SKILL_SHIFT = 1u << 5;
 static constexpr KeyCode BUTTON_SKILL_CTRL = 1u << 6;
 static constexpr KeyCode BUTTON_HIT_V = 1u << 7;
+static constexpr KeyCode BUTTON_RELOAD = 1u << 8;
 
 inline bool GetKeyDown(uint32_t buttonsThisTick, uint32_t buttonsDown, uint32_t prevButtonsDown, KeyCode keyMask)
 {
