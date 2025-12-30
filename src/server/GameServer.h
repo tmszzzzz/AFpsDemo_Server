@@ -44,17 +44,18 @@ public:
     collision::CollisionWorld g_collisionWorld;
 
 private:
-    struct ClientInfo
-    {
+    struct ClientInfo {
         uint32_t playerId = 0;
 
         // 网络输入缓冲：
         // - lastInput 表示“最新一帧输入状态”
-        // - buttonsThisTick 自上次 Tick 以来 OR 的“按钮事件”
+        // - pendingButtons 自上次 Tick 以来 OR 的“按钮事件”
         // - buttonsThisTick 本 Tick 的按钮边沿快照 相当于pendingButtons的瞬时只读副本
+        // - prevButtonsDown 上一 Tick 的 buttonsDown（上一帧按住态）
         proto::InputCommand lastInput{};
-        uint32_t            pendingButtons = 0;
-        uint32_t            buttonsThisTick = 0;
+        uint32_t pendingButtons = 0;
+        uint32_t buttonsThisTick = 0;
+        uint32_t prevButtonsDown = 0;
 
         // 该连接对应的英雄核心（一个玩家一个 HeroCore）
         std::unique_ptr<hero::HeroCore> hero;

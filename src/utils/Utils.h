@@ -106,15 +106,17 @@ static constexpr KeyCode BUTTON_RELOAD = 1u << 8;
 
 inline bool GetKeyDown(uint32_t buttonsThisTick, uint32_t buttonsDown, uint32_t prevButtonsDown, KeyCode keyMask)
 {
-    return (buttonsThisTick & keyMask) != 0;
+    const bool edgeEvent   = (buttonsThisTick & keyMask) != 0; // 推荐主路径：事件边沿
+    const bool stateEdge   = ((buttonsDown & keyMask) != 0) && ((prevButtonsDown & keyMask) == 0); // 兜底：状态差分
+    return edgeEvent || stateEdge;
 }
 
-inline bool GetKey(uint32_t buttonsThisTick, uint32_t buttonsDown, uint32_t prevButtonsDown, KeyCode keyMask)
+inline bool GetKey(uint32_t, uint32_t buttonsDown, uint32_t, KeyCode keyMask)
 {
     return (buttonsDown & keyMask) != 0;
 }
 
-inline bool GetKeyUp(uint32_t buttonsThisTick, uint32_t buttonsDown, uint32_t prevButtonsDown, KeyCode keyMask)
+inline bool GetKeyUp(uint32_t, uint32_t buttonsDown, uint32_t prevButtonsDown, KeyCode keyMask)
 {
     const bool wasDown = (prevButtonsDown & keyMask) != 0;
     const bool isDown  = (buttonsDown & keyMask) != 0;

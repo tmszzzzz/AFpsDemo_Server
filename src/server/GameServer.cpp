@@ -87,6 +87,8 @@ void GameServer::Tick(float dt) {
                 kCapsuleHalfHeight
         );
 
+        info.prevButtonsDown = info.lastInput.buttonMask;
+
         // - mvState.Velocity / Yaw / Pitch 已在 CharacterMotor 内部更新
         // - IsGrounded 在 KCC 中根据地面情况写回
     }
@@ -193,9 +195,9 @@ void GameServer::handleJoinRequest(uint32_t connectionId, const proto::Message& 
 
     // 为这个 Hero 挂一个 NetworkInputMovementSource
     movement::NetworkInputMovementSource::NetInputBuffer buffer{};
-    buffer.lastInput      = &info.lastInput;
+    buffer.lastInput       = &info.lastInput;
     buffer.buttonsThisTick = &info.buttonsThisTick;
-    buffer.pendingButtons = &info.pendingButtons;
+    buffer.prevButtonsDown = &info.prevButtonsDown;
 
     auto netInputSource =
             std::make_shared<movement::NetworkInputMovementSource>(buffer);
@@ -269,12 +271,10 @@ void GameServer::handlePing(uint32_t connectionId, const proto::Message& msg)
 }
 
 // ==== 修改: GameServer::handleInputCommand ====
-void GameServer::handleInputCommand(uint32_t connectionId, const proto::Message& msg)
-{
+void GameServer::handleInputCommand(uint32_t connectionId, const proto::Message& msg) {
     // 1. 解析 InputCommand 消息
     proto::InputCommand cmd{};
-    if (!proto::DecodeInputCommand(msg, cmd))
-    {
+    if (!proto::DecodeInputCommand(msg, cmd)) {
         std::cout << "Failed to decode InputCommand from conn="
                   << connectionId << "\n";
         return;
@@ -282,29 +282,32 @@ void GameServer::handleInputCommand(uint32_t connectionId, const proto::Message&
 
     // 2. 查找对应的客户端信息
     auto it = _clients.find(connectionId);
-    if (it == _clients.end())
-    {
+    if (it == _clients.end()) {
         std::cout << "InputCommand from unknown conn=" << connectionId
                   << " playerId=" << cmd.playerId << "\n";
         return;
     }
 
-    ClientInfo& info = it->second;
+    ClientInfo &info = it->second;
 
     // 可选：检查 payload 中的 playerId 是否与服务器记录一致
-    if (info.playerId != cmd.playerId)
-    {
+    if (info.playerId != cmd.playerId) {
         std::cout << "InputCommand playerId mismatch: conn=" << connectionId
                   << " stored=" << info.playerId
                   << " msg=" << cmd.playerId << "\n";
         // 测试阶段先不丢弃，仍然覆盖
     }
 
-    // 3. 覆盖“状态型输入”（轴 / 视角）
+    // 3) 计算包级别“按下边沿”：本包按下 & 上一包未按下
+    const uint32_t prevPacketDown = info.lastInput.buttonMask;
+    const uint32_t downEdge = cmd.buttonMask & ~prevPacketDown;
+
+    // 4) 覆盖最新状态输入
     info.lastInput = cmd;
 
-    // 4. 对“事件型输入”（按钮）做 OR 累积：自上次 Tick 以来按过的按钮都不会丢
-    info.pendingButtons |= cmd.buttonMask;
+    // 5) 事件型输入：只累积按下边沿（跨 Tick 不丢）
+    info.pendingButtons |= downEdge;
+
 }
 
 
