@@ -12,6 +12,7 @@
 #include "IMovementSource.h"
 #include "../../../protocol/Messages.h"   // proto::InputCommand
 #include "../../../utils/Utils.h"        // Vec3
+#include "../../../GameServer.h"
 
 namespace movement
 {
@@ -23,9 +24,7 @@ namespace movement
     public:
         struct NetInputBuffer
         {
-            proto::InputCommand* lastInput      = nullptr; // 最新状态输入
-            const uint32_t*      buttonsThisTick = nullptr; // 本 Tick 的按下边沿（down edge）
-            const uint32_t*      prevButtonsDown = nullptr; // 上一 Tick 的按住态
+            const ServerInputFrame* frame = nullptr;
         };
 
         explicit NetworkInputMovementSource(NetInputBuffer buffer)
@@ -34,8 +33,7 @@ namespace movement
 
         bool IsActive() const override
         {
-            // 网络输入源一直是活跃的，只要绑定了缓冲
-            return _buffer.lastInput != nullptr && _buffer.buttonsThisTick != nullptr;
+            return _buffer.frame != nullptr;
         }
 
         bool AutoRemoveWhenInactive() const override

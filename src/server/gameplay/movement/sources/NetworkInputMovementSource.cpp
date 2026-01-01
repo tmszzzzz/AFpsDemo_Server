@@ -13,19 +13,17 @@ namespace movement
                                                   MovementCommand&   command,
                                                   float              deltaTime)
     {
-        if (!_buffer.lastInput || !_buffer.buttonsThisTick || deltaTime <= 0.0f)
+        if (!_buffer.frame || deltaTime <= 0.0f)
             return;
 
-        proto::InputCommand& ic = *_buffer.lastInput;
-
-        const uint32_t buttonsThisTick = *_buffer.buttonsThisTick;               // down edge
-        const uint32_t buttonsDown     = ic.buttonMask;                          // hold state
-        const uint32_t prevButtonsDown = _buffer.prevButtonsDown ? *_buffer.prevButtonsDown : 0;
-
+        const ServerInputFrame& in = *_buffer.frame;
+        const uint32_t buttonsThisTick = in.buttonsThisTick; // down edge
+        const uint32_t buttonsDown     = in.buttonsDown;     // hold state
+        const uint32_t prevButtonsDown = in.prevButtonsDown; // last tick hold state
 
         // 1. 平面移动：使用 moveX/moveY + 当前 Yaw 计算期望水平速度
-        float h = ic.moveX; // -1..1
-        float v = ic.moveY; // -1..1
+        float h = in.moveX; // -1..1
+        float v = in.moveY; // -1..1
 
         float lenSq = h * h + v * v;
         if (lenSq > 1e-6f)
@@ -57,8 +55,8 @@ namespace movement
         // 2. 视角：这里我们把 InputCommand 的 yaw/pitch 视为“绝对朝向”，
         //    因此转换成相对于当前 state 的增量，让 CharacterMotor 去限制/归一化。
         {
-            float yawDelta   = (ic.yaw   - state.Yaw)   * _yawSensitivityDeg;
-            float pitchDelta = (ic.pitch - state.Pitch) * _pitchSensitivityDeg;
+            float yawDelta   = (in.yaw   - state.Yaw)   * _yawSensitivityDeg;
+            float pitchDelta = (in.pitch - state.Pitch) * _pitchSensitivityDeg;
 
             command.LookDeltaYaw   += yawDelta;
             command.LookDeltaPitch += pitchDelta;

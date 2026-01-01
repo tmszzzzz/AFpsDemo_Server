@@ -7,7 +7,9 @@ set(ASIO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/src/third_party/asio")
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fexec-charset=GBK")
 
-add_library(asio INTERFACE)
+add_library(asio INTERFACE
+        src/server/gameplay/ability/task/SeqTask.h
+        src/server/gameplay/ability/task/TaskAbility.h)
 target_include_directories(asio INTERFACE
         "${ASIO_ROOT}/include"
 )
@@ -48,6 +50,24 @@ add_executable(Demo0_Server src/main.cpp
         src/server/kcc/KCC.cpp
         src/server/gameplay/movement/sources/NetworkInputMovementSource.cpp
         src/server/gameplay/movement/sources/NetworkInputMovementSource.h
+        src/server/gameplay/ability/AbilitySlot.h
+        src/server/gameplay/ability/AbilityLocks.h
+        src/server/gameplay/ability/AbilityContext.h
+        src/server/gameplay/ability/AbilityBase.h
+        src/server/gameplay/ability/task/TaskStatus.h
+        src/server/gameplay/ability/task/AbilityTask.h
+        src/server/gameplay/ability/task/WaitTask.h
+        src/server/gameplay/ability/task/InputGateTask.h
+        src/server/gameplay/ability/task/ScopedLocksTask.h
+        src/server/gameplay/ability/task/ChargeHoldTask.h
+        src/server/gameplay/ability/task/DashTask.h
+        src/server/gameplay/ability/task/EmitEventTask.h
+        src/server/gameplay/ability/AbilityArbiter.h
+        src/server/gameplay/ability/AbilityArbiter.cpp
+        src/server/gameplay/ability/AbilitySet.cpp
+        src/server/gameplay/ability/AbilitySet.h
+        src/server/gameplay/ability/abilities/DashAbility.cpp
+        src/server/gameplay/ability/abilities/DashAbility.h
 )
 
 target_link_libraries(Demo0_Server

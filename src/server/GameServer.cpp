@@ -65,9 +65,19 @@ void GameServer::Tick(float dt) {
 
         hero::HeroCore &core = *info.hero;
 
-        // 统一消费点：截取本 Tick 按钮快照，并清空跨 Tick 累积容器
-        info.buttonsThisTick = info.pendingButtons;
-        info.pendingButtons  = 0;
+        // 统一消费点：构造本 tick 的 gameplay 输入帧
+        // 1) 按钮事件（down-edge）：pendingButtons -> buttonsThisTick，并清零 pendingButtons
+        info.inputFrame.buttonsThisTick = info.pendingButtons;
+        info.pendingButtons = 0;
+
+        // 2) 按住态：来自 lastInput.buttonMask
+        info.inputFrame.buttonsDown = info.lastInput.buttonMask;
+
+        // 3) 连续轴：来自 lastInput（moveX/moveY/yaw/pitch）
+        info.inputFrame.moveX = info.lastInput.moveX;
+        info.inputFrame.moveY = info.lastInput.moveY;
+        info.inputFrame.yaw = info.lastInput.yaw;
+        info.inputFrame.pitch = info.lastInput.pitch;
 
         // 3.1 由 HeroCore 合成 MovementCommand，并计算“理想位移”（不含碰撞）
         movement::MovementCommand cmd = movement::MovementCommand::CreateEmpty();
@@ -87,10 +97,7 @@ void GameServer::Tick(float dt) {
                 kCapsuleHalfHeight
         );
 
-        info.prevButtonsDown = info.lastInput.buttonMask;
-
-        // - mvState.Velocity / Yaw / Pitch 已在 CharacterMotor 内部更新
-        // - IsGrounded 在 KCC 中根据地面情况写回
+        info.inputFrame.prevButtonsDown = info.inputFrame.buttonsDown;
     }
 
     // [M3-2.6] 基于定时器的 WorldSnapshot 广播
@@ -195,9 +202,7 @@ void GameServer::handleJoinRequest(uint32_t connectionId, const proto::Message& 
 
     // 为这个 Hero 挂一个 NetworkInputMovementSource
     movement::NetworkInputMovementSource::NetInputBuffer buffer{};
-    buffer.lastInput       = &info.lastInput;
-    buffer.buttonsThisTick = &info.buttonsThisTick;
-    buffer.prevButtonsDown = &info.prevButtonsDown;
+    buffer.frame = &info.inputFrame;
 
     auto netInputSource =
             std::make_shared<movement::NetworkInputMovementSource>(buffer);

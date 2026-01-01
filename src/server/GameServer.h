@@ -21,6 +21,24 @@ struct OutgoingPacket
     std::vector<uint8_t> bytes;
 };
 
+// 服务端每 tick 统一使用的输入视图：
+// - buttonsDown: 当前按住态（通常来自 lastInput.buttonMask）
+// - prevButtonsDown: 上一 tick 的按住态
+// - buttonsThisTick: 本 tick 内发生过的按下（down-edge 聚合）；用于 GetKeyDown
+//
+struct ServerInputFrame
+{
+    uint32_t buttonsThisTick = 0;
+    uint32_t buttonsDown = 0;
+    uint32_t prevButtonsDown = 0;
+
+    float moveX = 0.0f;
+    float moveY = 0.0f;
+
+    float yaw = 0.0f;
+    float pitch = 0.0f;
+};
+
 class GameServer
 {
 public:
@@ -47,15 +65,12 @@ private:
     struct ClientInfo {
         uint32_t playerId = 0;
 
-        // 网络输入缓冲：
-        // - lastInput 表示“最新一帧输入状态”
-        // - pendingButtons 自上次 Tick 以来 OR 的“按钮事件”
-        // - buttonsThisTick 本 Tick 的按钮边沿快照 相当于pendingButtons的瞬时只读副本
-        // - prevButtonsDown 上一 Tick 的 buttonsDown（上一帧按住态）
+        // 网络输入缓冲（网络层）：最新状态 + 跨 tick 聚合的 down-edge
         proto::InputCommand lastInput{};
         uint32_t pendingButtons = 0;
-        uint32_t buttonsThisTick = 0;
-        uint32_t prevButtonsDown = 0;
+
+        // Gameplay 输入视图（每 tick 由 lastInput/pendingButtons 生成）
+        ServerInputFrame inputFrame{};
 
         // 该连接对应的英雄核心（一个玩家一个 HeroCore）
         std::unique_ptr<hero::HeroCore> hero;
