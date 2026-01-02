@@ -63,7 +63,7 @@ void GameServer::Tick(float dt) {
         if (!info.hero)
             continue;
 
-        hero::HeroCore &core = *info.hero;
+        hero::HeroCore &core = info.hero->Core();
 
         // 统一消费点：构造本 tick 的 gameplay 输入帧
         // 1) 按钮事件（down-edge）：pendingButtons -> buttonsThisTick，并清零 pendingButtons
@@ -98,6 +98,26 @@ void GameServer::Tick(float dt) {
         );
 
         info.inputFrame.prevButtonsDown = info.inputFrame.buttonsDown;
+
+        auto requestDash = [&](float durationSec, float speed) {
+            //TODO
+            //auto dashSrc = std::make_shared<movement::DashMovementSource>(durationSec, speed);
+            //info.hero->Core().AddMovementSource(dashSrc);
+        };
+
+        auto emitEvent = [&](const proto::GameEvent &ev) {
+            BroadcastGameEvent(ev, /*reliableTcp=*/false);
+        };
+
+        info.hero->TickGameplay(_serverTime,
+                                dt,
+                                _serverTick,
+                                info.inputFrame,
+                                requestDash,
+                                emitEvent,
+                                nullptr,
+                                nullptr);
+
     }
 
     // [M3-2.6] 基于定时器的 WorldSnapshot 广播
@@ -193,12 +213,8 @@ void GameServer::handleJoinRequest(uint32_t connectionId, const proto::Message& 
 
     // TODO: 根据关卡/出生点系统决定 spawnPos，这里先用原点附近占位
     Vec3 spawnPos{0.0f, 1.0f, 0.0f};
-
-    info.hero = std::make_unique<hero::HeroCore>(
-            hero::HeroId::Generic,
-            spawnPos,
-            heroCfg
-    );
+    auto core = std::make_unique<hero::HeroCore>(hero::HeroId::Generic,spawnPos,heroCfg);
+    info.hero = std::make_unique<gameplay::HeroEntity>(info.playerId, std::move(core));
 
     // 为这个 Hero 挂一个 NetworkInputMovementSource
     movement::NetworkInputMovementSource::NetInputBuffer buffer{};
@@ -207,7 +223,7 @@ void GameServer::handleJoinRequest(uint32_t connectionId, const proto::Message& 
     auto netInputSource =
             std::make_shared<movement::NetworkInputMovementSource>(buffer);
 
-    info.hero->AddMovementSource(netInputSource);
+    info.hero->Core().AddMovementSource(netInputSource);
 
     info.lastInput.playerId = playerId;
 
@@ -346,7 +362,7 @@ void GameServer::buildWorldSnapshot(proto::WorldSnapshot& outSnapshot)
         if (!info.hero)
             continue;
 
-        const hero::HeroCore&  hero      = *info.hero;
+        const hero::HeroCore&  hero      = info.hero->Core();
         const hero::HeroState& heroState = hero.GetState();
         const movement::PlayerState& mv  = heroState.playerState;
 

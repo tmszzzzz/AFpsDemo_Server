@@ -7,7 +7,7 @@
 
 #include <cstdint>
 #include <functional>
-#include "../../GameServer.h"
+#include "../../../utils/Utils.h"
 
 namespace proto { struct GameEvent; }
 

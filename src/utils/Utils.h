@@ -129,4 +129,22 @@ constexpr float SNAPSHOT_INTERVAL_SEC = 0.05f;
 // 角度弧度转换
 constexpr float DEG2RAD = 3.1415926535f / 180.0f;
 
+// 服务端每 tick 统一使用的输入视图：
+// - buttonsDown: 当前按住态（通常来自 lastInput.buttonMask）
+// - prevButtonsDown: 上一 tick 的按住态
+// - buttonsThisTick: 本 tick 内发生过的按下（down-edge 聚合）；用于 GetKeyDown
+//
+struct ServerInputFrame
+{
+    uint32_t buttonsThisTick = 0;
+    uint32_t buttonsDown = 0;
+    uint32_t prevButtonsDown = 0;
+
+    float moveX = 0.0f;
+    float moveY = 0.0f;
+
+    float yaw = 0.0f;
+    float pitch = 0.0f;
+};
+
 #endif //DEMO0_SERVER_UTILS_H

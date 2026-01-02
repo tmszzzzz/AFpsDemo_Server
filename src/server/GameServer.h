@@ -7,36 +7,18 @@
 
 
 #include "../protocol/Messages.h"
+#include "gameplay/hero/HeroEntity.h"
 #include "collision/CollisionWorld.h"
-#include "gameplay/movement/core/PlayerState.h"
-#include "gameplay/heroes/HeroCore.h"
 #include <cstdint>
 #include <unordered_map>
 #include <vector>
+#include <memory>
 
 struct OutgoingPacket
 {
     bool isTcp;
     uint32_t connectionId;
     std::vector<uint8_t> bytes;
-};
-
-// 服务端每 tick 统一使用的输入视图：
-// - buttonsDown: 当前按住态（通常来自 lastInput.buttonMask）
-// - prevButtonsDown: 上一 tick 的按住态
-// - buttonsThisTick: 本 tick 内发生过的按下（down-edge 聚合）；用于 GetKeyDown
-//
-struct ServerInputFrame
-{
-    uint32_t buttonsThisTick = 0;
-    uint32_t buttonsDown = 0;
-    uint32_t prevButtonsDown = 0;
-
-    float moveX = 0.0f;
-    float moveY = 0.0f;
-
-    float yaw = 0.0f;
-    float pitch = 0.0f;
 };
 
 class GameServer
@@ -72,8 +54,8 @@ private:
         // Gameplay 输入视图（每 tick 由 lastInput/pendingButtons 生成）
         ServerInputFrame inputFrame{};
 
-        // 该连接对应的英雄核心（一个玩家一个 HeroCore）
-        std::unique_ptr<hero::HeroCore> hero;
+        // 该连接对应的英雄核心（一个玩家一个 HeroEntity）
+        std::unique_ptr<gameplay::HeroEntity> hero;
 
     };
 

@@ -10,13 +10,11 @@
 
 #include <memory>
 #include <vector>
+#include "AbilityBase.h"
+#include "AbilityArbiter.h"
 
 namespace ability
 {
-    class AbilityBase;
-    struct Context;
-    class Arbiter;
-
     class AbilitySet
     {
     public:

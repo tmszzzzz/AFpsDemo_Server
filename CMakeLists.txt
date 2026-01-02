@@ -43,9 +43,9 @@ add_executable(Demo0_Server src/main.cpp
         src/server/gameplay/movement/core/MovementSourceCollection.h
         src/server/gameplay/movement/core/CharacterMotor.cpp
         src/server/gameplay/movement/core/CharacterMotor.h
-        src/server/gameplay/heroes/HeroDefines.h
-        src/server/gameplay/heroes/HeroCore.cpp
-        src/server/gameplay/heroes/HeroCore.h
+        src/server/gameplay/hero/HeroDefines.h
+        src/server/gameplay/hero/HeroCore.cpp
+        src/server/gameplay/hero/HeroCore.h
         src/server/kcc/KCC.h
         src/server/kcc/KCC.cpp
         src/server/gameplay/movement/sources/NetworkInputMovementSource.cpp
@@ -68,6 +68,8 @@ add_executable(Demo0_Server src/main.cpp
         src/server/gameplay/ability/AbilitySet.h
         src/server/gameplay/ability/abilities/DashAbility.cpp
         src/server/gameplay/ability/abilities/DashAbility.h
+        src/server/gameplay/hero/HeroEntity.cpp
+        src/server/gameplay/hero/HeroEntity.h
 )
 
 target_link_libraries(Demo0_Server
