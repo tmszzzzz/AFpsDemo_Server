@@ -26,9 +26,6 @@ namespace gameplay
                                   uint8_t* outActiveSlot,
                                   uint8_t* outActivePhase)
     {
-        // 关键：locks 是“本 tick 聚合结果”，必须每 tick 清零，否则会永久累积
-        _locks = 0;
-
         ability::Context ctx{};
         ctx.dt = dt;
         ctx.serverTimeSec = serverTimeSec;
@@ -36,8 +33,6 @@ namespace gameplay
 
         ctx.input = &in;
         ctx.ownerPlayerId = _playerId;
-
-        ctx.locks = &_locks;
 
         // snapshot 目前没用也可以传 null；需要调试再接上
         ctx.outActiveSlot = outActiveSlot;

@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 namespace ability
 {
@@ -18,16 +19,18 @@ namespace ability
     public:
         void Tick(Context& ctx, AbilityBase* const* abilities, int count);
 
-        uint32_t Locks() const { return _locks; }
-        AbilityBase* Active() const { return _active; }
+        const std::vector<AbilityBase*>& Actives() const { return _actives; }
 
     private:
-        uint32_t _locks = 0;
-        AbilityBase* _active = nullptr;
+        std::vector<AbilityBase*> _actives;
+        AbilityBase* _resourceOwner[32] = {};
 
-        void startAbility(Context& ctx, AbilityBase* ab);
-        void cancelActive(Context& ctx);
-        void rebuildLocks();
+        // ---- helpers ----
+        void rebuildOwners(AbilityBase* const* abilities, int count);
+
+        bool tryStart(Context& ctx, AbilityBase* candidate); // 尝试启动：处理抢占/拒绝
+        void cancelAbility(Context& ctx, AbilityBase* ab);   // 取消某个 active
+        void startAbility(Context& ctx, AbilityBase* ab);    // 启动并登记资源
     };
 }
 #endif //DEMO0_SERVER_ABILITYARBITER_H

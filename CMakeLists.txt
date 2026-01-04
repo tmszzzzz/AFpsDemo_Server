@@ -51,14 +51,12 @@ add_executable(Demo0_Server src/main.cpp
         src/server/gameplay/movement/sources/NetworkInputMovementSource.cpp
         src/server/gameplay/movement/sources/NetworkInputMovementSource.h
         src/server/gameplay/ability/AbilitySlot.h
-        src/server/gameplay/ability/AbilityLocks.h
         src/server/gameplay/ability/AbilityContext.h
         src/server/gameplay/ability/AbilityBase.h
         src/server/gameplay/ability/task/TaskStatus.h
         src/server/gameplay/ability/task/AbilityTask.h
         src/server/gameplay/ability/task/WaitTask.h
         src/server/gameplay/ability/task/InputGateTask.h
-        src/server/gameplay/ability/task/ScopedLocksTask.h
         src/server/gameplay/ability/task/ChargeHoldTask.h
         src/server/gameplay/ability/task/DashTask.h
         src/server/gameplay/ability/task/EmitEventTask.h
@@ -72,6 +70,7 @@ add_executable(Demo0_Server src/main.cpp
         src/server/gameplay/hero/HeroEntity.h
         src/server/gameplay/movement/sources/DashMovementSource.cpp
         src/server/gameplay/movement/sources/DashMovementSource.h
+        src/server/gameplay/ability/AbilityResources.h
 )
 
 target_link_libraries(Demo0_Server

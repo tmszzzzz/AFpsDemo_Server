@@ -22,9 +22,6 @@ namespace ability
         const ServerInputFrame* input = nullptr;
         uint32_t ownerPlayerId = 0;
 
-        // Arbiter 聚合的全局锁（HeroEntity 持有）
-        uint32_t* locks = nullptr;
-
         // 写回 snapshot 的同步字段（由 HeroEntity 传入指针）
         uint8_t*  outActiveSlot  = nullptr;
         uint8_t*  outActivePhase = nullptr;

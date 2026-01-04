@@ -47,8 +47,6 @@ namespace gameplay
                           uint8_t* outActiveSlot = nullptr,
                           uint8_t* outActivePhase = nullptr);
 
-        uint32_t Locks() const { return _locks; }
-
         ability::AbilitySet& Abilities() { return _abilities; }
         const ability::AbilitySet& Abilities() const { return _abilities; }
 
@@ -57,9 +55,6 @@ namespace gameplay
         std::unique_ptr<hero::HeroCore> _core;
 
         ability::AbilitySet _abilities;
-
-        // 由武器/技能等系统在本 tick 内 OR 写入。必须每 tick 清零。
-        uint32_t _locks = 0;
     };
 }
 

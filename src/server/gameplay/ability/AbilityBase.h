@@ -7,6 +7,7 @@
 
 #include "AbilitySlot.h"
 #include "AbilityContext.h"
+#include "AbilityResources.h"
 #include <cstdint>
 
 namespace ability
@@ -39,10 +40,12 @@ namespace ability
         virtual bool IsActive() const = 0;
         virtual Phase CurrentPhase() const = 0;
 
-        // 给 Arbiter 的元信息
-        virtual uint32_t RequestedLocks() const { return 0; }
-        virtual int Priority() const { return 0; }
-        virtual bool CanBeInterrupted() const { return true; }
+        // [ADD] 我占用哪些资源（bitmask）
+        virtual uint32_t ClaimedResources() const { return Res_None; }
+
+        // [ADD] 针对某个资源 bit 的优先级（只对 ClaimedResources() 里包含的 bit 有意义）
+        // 建议：未申请的资源返回 0（或 INT_MIN），但 Arbiter 会先检查 mask。
+        virtual int ResourcePriority(uint32_t resourceBit) const { (void)resourceBit; return 0; }
     };
 }
 #endif //DEMO0_SERVER_ABILITYBASE_H
