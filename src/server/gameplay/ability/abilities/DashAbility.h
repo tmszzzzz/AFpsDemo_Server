@@ -29,8 +29,8 @@ namespace ability
         std::unique_ptr<IAbilityTask> Build(Context& ctx, const StartRequest& req) override;
 
     private:
-        float _dashDuration = 0.18f;
-        float _dashSpeed = 18.0f;
+        float _dashDuration = 0.1f;
+        float _dashSpeed = 200.0f;
     };
 }
 

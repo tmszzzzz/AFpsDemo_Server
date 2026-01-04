@@ -70,6 +70,8 @@ add_executable(Demo0_Server src/main.cpp
         src/server/gameplay/ability/abilities/DashAbility.h
         src/server/gameplay/hero/HeroEntity.cpp
         src/server/gameplay/hero/HeroEntity.h
+        src/server/gameplay/movement/sources/DashMovementSource.cpp
+        src/server/gameplay/movement/sources/DashMovementSource.h
 )
 
 target_link_libraries(Demo0_Server

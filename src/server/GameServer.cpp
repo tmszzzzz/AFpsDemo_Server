@@ -6,6 +6,7 @@
 #include "../protocol/Serializer.h"
 #include "kcc/KCC.h"
 #include "gameplay/movement/sources/NetworkInputMovementSource.h"
+#include "gameplay/movement/sources/DashMovementSource.h"
 #include <iostream>
 
 GameServer::GameServer()
@@ -99,13 +100,12 @@ void GameServer::Tick(float dt) {
 
         info.inputFrame.prevButtonsDown = info.inputFrame.buttonsDown;
 
-        auto requestDash = [&](float durationSec, float speed) {
-            //TODO
-            //auto dashSrc = std::make_shared<movement::DashMovementSource>(durationSec, speed);
-            //info.hero->Core().AddMovementSource(dashSrc);
+        auto static requestDash = [&](float durationSec, float speed) {
+            auto dashSrc = std::make_shared<movement::DashMovementSource>(durationSec, speed);
+            info.hero->Core().AddMovementSource(dashSrc);
         };
 
-        auto emitEvent = [&](const proto::GameEvent &ev) {
+        auto static emitEvent = [&](const proto::GameEvent &ev) {
             BroadcastGameEvent(ev, /*reliableTcp=*/false);
         };
 
