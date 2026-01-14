@@ -5,19 +5,23 @@
 #ifndef DEMO0_SERVER_ABILITYSET_H
 #define DEMO0_SERVER_ABILITYSET_H
 
-
-#pragma once
-
 #include <memory>
 #include <vector>
-#include "AbilityBase.h"
-#include "AbilityArbiter.h"
+#include "AbilityFwd.h"
 
 namespace ability
 {
     class AbilitySet
     {
     public:
+        AbilitySet();
+        ~AbilitySet();                 // 关键：只声明，不在头里 default
+
+        AbilitySet(const AbilitySet&) = delete;
+        AbilitySet& operator=(const AbilitySet&) = delete;
+        AbilitySet(AbilitySet&&) noexcept = default;
+        AbilitySet& operator=(AbilitySet&&) noexcept = default;
+
         void Add(std::unique_ptr<AbilityBase> ab);
         void Tick(Context& ctx);
 

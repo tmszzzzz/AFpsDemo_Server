@@ -6,9 +6,9 @@
 #define DEMO0_SERVER_ABILITYBASE_H
 
 #include "AbilitySlot.h"
-#include "AbilityContext.h"
 #include "AbilityResources.h"
 #include <cstdint>
+#include "AbilityFwd.h"
 
 namespace ability
 {

@@ -8,6 +8,9 @@
 
 namespace ability
 {
+    AbilitySet::AbilitySet() = default;
+    AbilitySet::~AbilitySet() = default;
+
     void AbilitySet::rebuildRaw()
     {
         _raw.clear();

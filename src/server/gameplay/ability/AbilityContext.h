@@ -5,11 +5,9 @@
 #ifndef DEMO0_SERVER_ABILITYCONTEXT_H
 #define DEMO0_SERVER_ABILITYCONTEXT_H
 
-#include <cstdint>
 #include <functional>
 #include "../../../utils/Utils.h"
-
-namespace proto { struct GameEvent; }
+#include "AbilityFwd.h"
 
 namespace ability
 {
@@ -31,6 +29,19 @@ namespace ability
 
         // 对接事件广播（由 GameServer 绑定到 BroadcastGameEvent）
         std::function<void(const proto::GameEvent&)> emitEvent;
+
+        // =========================
+        // Arbiter 注入：当前正在被调用的 ability
+        // =========================
+        AbilityBase* self = nullptr;
+
+        // =========================
+        // 运行中资源申请/释放（用于 Task scope 或运行中临时占用）
+        // - 返回 true：成功占用；false：被拒绝（优先级不够/owner不可抢占等）
+        // - 约束：调用者默认就是 ctx.self
+        // =========================
+        std::function<bool(uint32_t resourceBit, int priority)> tryAcquireResource;
+        std::function<void(uint32_t resourceBit)> releaseResource;
     };
 }
 #endif //DEMO0_SERVER_ABILITYCONTEXT_H

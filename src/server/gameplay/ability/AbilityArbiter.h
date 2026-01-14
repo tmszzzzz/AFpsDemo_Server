@@ -8,12 +8,11 @@
 
 #include <cstdint>
 #include <vector>
+#include <unordered_map>
+#include "AbilityFwd.h"
 
 namespace ability
 {
-    class AbilityBase;
-    struct Context;
-
     class Arbiter
     {
     public:
@@ -23,14 +22,28 @@ namespace ability
 
     private:
         std::vector<AbilityBase*> _actives;
+
+        // owner 台账（不再每 tick 重建）
         AbilityBase* _resourceOwner[32] = {};
 
-        // ---- helpers ----
-        void rebuildOwners(AbilityBase* const* abilities, int count);
+        // 记录每个 active ability 登记过的 claimed mask
+        std::unordered_map<AbilityBase*, uint32_t> _claimedMask;
 
-        bool tryStart(Context& ctx, AbilityBase* candidate); // 尝试启动：处理抢占/拒绝
-        void cancelAbility(Context& ctx, AbilityBase* ab);   // 取消某个 active
-        void startAbility(Context& ctx, AbilityBase* ab);    // 启动并登记资源
+        // ---- helpers ----
+        bool tryStart(Context& ctx, AbilityBase* candidate);
+
+        // [MOD] start/cancel 变成“带登记/释放”的版本
+        void startAbility(Context& ctx, AbilityBase* ab);
+        void cancelAbility(Context& ctx, AbilityBase* ab);
+
+        // [ADD] 增量维护
+        void registerAbility(AbilityBase* ab, uint32_t mask);
+        void unregisterAbility(AbilityBase* ab);
+
+        // [ADD] 运行中资源申请/释放（给 ctx.tryAcquireResource / releaseResource 用）
+        bool acquireRuntime(Context& ctx, AbilityBase* requester, uint32_t bit, int pNew);
+        void releaseRuntime(AbilityBase* requester, uint32_t bit);
     };
 }
+
 #endif //DEMO0_SERVER_ABILITYARBITER_H

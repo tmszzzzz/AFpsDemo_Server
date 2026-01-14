@@ -71,6 +71,7 @@ add_executable(Demo0_Server src/main.cpp
         src/server/gameplay/movement/sources/DashMovementSource.cpp
         src/server/gameplay/movement/sources/DashMovementSource.h
         src/server/gameplay/ability/AbilityResources.h
+        src/server/gameplay/ability/AbilityFwd.h
 )
 
 target_link_libraries(Demo0_Server
