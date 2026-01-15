@@ -212,14 +212,16 @@ namespace ability
     void Arbiter::Tick(Context& ctx, AbilityBase* const* abilities, int count)
     {
         // 0) 注入 runtime 资源接口（Task scope 可用）
-        ctx.tryAcquireResource = [this, &ctx](uint32_t bit, int prio) -> bool
+        auto static ac = [this, &ctx](uint32_t bit, int prio) -> bool
         {
             return this->acquireRuntime(ctx, ctx.self, bit, prio);
         };
-        ctx.releaseResource = [this, &ctx](uint32_t bit)
+        ctx.tryAcquireResource = ac;
+        auto static rl = [this, &ctx](uint32_t bit)
         {
             this->releaseRuntime(ctx.self, bit);
         };
+        ctx.releaseResource = rl;
 
         // 1) Tick 所有 active（用 _actives；期间可能结束）
         //    结束后必须 unregister，以保持台账一致
@@ -246,20 +248,27 @@ namespace ability
             ++i;
         }
 
-        // 2) 启动候选：你原本的“多次尝试启动”的框架保留，但删掉 started 后 rebuildOwners
-        bool tried[128] = {}; // 你原代码里如果不是 128，就保持你当前的大小
+        // 2) 启动候选
+        std::vector<bool> tried(count, false);
+
+        auto candidateScore = [](AbilityBase* ab) -> int
+        {
+            if (!ab) return -2147483647;
+            const uint32_t want = ab->ClaimedResources();
+            int best = -2147483647;
+            for (uint32_t bit = 1u; bit != 0u; bit <<= 1u)
+            {
+                if ((want & bit) == 0u) continue;
+                const int p = ab->ResourcePriority(bit);
+                if (p > best) best = p;
+            }
+            return best;
+        };
         for (;;)
         {
             AbilityBase* best = nullptr;
             int bestIdx = -1;
-            int bestScore = 0;
-
-            auto candidateScore = [](AbilityBase* ab) -> int
-            {
-                // 你原本怎么算 best 的就保留；这里用 0 兜底
-                (void)ab;
-                return 0;
-            };
+            int bestScore = -2147483647;
 
             for (int i = 0; i < count; ++i)
             {

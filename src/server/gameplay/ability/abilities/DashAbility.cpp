@@ -4,7 +4,8 @@
 
 #include "DashAbility.h"
 #include "../task/DashTask.h"
-#include "../task/SeqTask.h"
+#include "../task/ScopedResourceTask.h"
+#include "../AbilityResources.h"
 
 namespace ability {
     bool DashAbility::WantsStart(const Context &ctx) const {
@@ -18,7 +19,10 @@ namespace ability {
     }
 
     std::unique_ptr<IAbilityTask> DashAbility::Build(Context &, const StartRequest &) {
-        return MakeSeqT(
+        return MakeScopedResource(
+                Res_Ability,
+                100,
+                AcquireMode::TryFail,
                 MakeDash(_dashDuration, _dashSpeed)
         );
     }
