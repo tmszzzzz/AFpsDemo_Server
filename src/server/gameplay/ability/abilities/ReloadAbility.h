@@ -25,7 +25,7 @@ namespace ability
 
         int ResourcePriority(uint32_t resourceBit) const override
         {
-            if (resourceBit == Res_WeaponOp) return 10;
+            if (resourceBit == Res_WeaponOp) return 20;
             return 0;
         }
 

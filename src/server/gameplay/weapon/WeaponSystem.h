@@ -26,6 +26,10 @@ namespace weapon
                   uint32_t ownerPlayerId,
                   const std::function<void(const proto::GameEvent&)>& emitEvent);
 
+        void TryFire(uint32_t serverTick,
+                     uint32_t ownerPlayerId,
+                     const std::function<void(const proto::GameEvent&)>& emitEvent);
+
         void BeginReload(uint32_t serverTick,
                          uint32_t ownerPlayerId,
                          const std::function<void(const proto::GameEvent&)>& emitEvent);

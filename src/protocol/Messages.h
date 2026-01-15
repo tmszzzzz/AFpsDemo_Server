@@ -118,6 +118,7 @@ namespace proto
         WeaponDryFire = 3,
         WeaponReloadStarted = 4,
         WeaponReloadFinished = 5,
+        MeleeHit = 6,
     };
 
     //GameEvent: S -> C

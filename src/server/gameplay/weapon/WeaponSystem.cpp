@@ -33,10 +33,21 @@ namespace weapon
 
         _state.fireCooldown = std::max(0.0f, _state.fireCooldown - dt);
 
-        if (GetKey(in, MOUSE_FIRE_PRI))
+        if (_state.isReloading)
         {
-            tryFire(serverTick, ownerPlayerId, emitEvent);
+            _state.reloadRemain -= dt;
+            if (_state.reloadRemain <= 0.0f)
+                finishReload(serverTick, ownerPlayerId, emitEvent);
         }
+
+        (void)in;
+    }
+
+    void WeaponSystem::TryFire(uint32_t serverTick,
+                               uint32_t ownerPlayerId,
+                               const std::function<void(const proto::GameEvent&)>& emitEvent)
+    {
+        tryFire(serverTick, ownerPlayerId, emitEvent);
     }
 
     void WeaponSystem::BeginReload(uint32_t serverTick,

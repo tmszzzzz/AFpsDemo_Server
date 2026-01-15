@@ -5,6 +5,8 @@
 #include "HeroEntity.h"
 
 #include "../ability/abilities/DashAbility.h"
+#include "../ability/abilities/FireAbility.h"
+#include "../ability/abilities/MeleeAbility.h"
 #include "../ability/abilities/ReloadAbility.h"
 
 namespace gameplay
@@ -17,6 +19,8 @@ namespace gameplay
     {
         // MVP：默认装一个 DashAbility
         _abilities.Add(std::make_unique<ability::DashAbility>());
+        _abilities.Add(std::make_unique<ability::FireAbility>());
+        _abilities.Add(std::make_unique<ability::MeleeAbility>());
         _abilities.Add(std::make_unique<ability::ReloadAbility>());
     }
 
@@ -44,6 +48,9 @@ namespace gameplay
         ability::AbilityCallbacks abilityCallbacks{};
         abilityCallbacks.requestDash = requestDash;
         abilityCallbacks.emitEvent = emitEvent;
+        abilityCallbacks.tryFire = [this, emitEvent](uint32_t tick) {
+            _weapon.TryFire(tick, _playerId, emitEvent);
+        };
         abilityCallbacks.beginReload = [this, emitEvent](uint32_t tick) {
             _weapon.BeginReload(tick, _playerId, emitEvent);
         };

@@ -67,6 +67,10 @@ add_executable(Demo0_Server src/main.cpp
         src/server/gameplay/ability/AbilitySet.h
         src/server/gameplay/ability/abilities/DashAbility.cpp
         src/server/gameplay/ability/abilities/DashAbility.h
+        src/server/gameplay/ability/abilities/FireAbility.cpp
+        src/server/gameplay/ability/abilities/FireAbility.h
+        src/server/gameplay/ability/abilities/MeleeAbility.cpp
+        src/server/gameplay/ability/abilities/MeleeAbility.h
         src/server/gameplay/ability/abilities/ReloadAbility.cpp
         src/server/gameplay/ability/abilities/ReloadAbility.h
         src/server/gameplay/weapon/WeaponState.h
