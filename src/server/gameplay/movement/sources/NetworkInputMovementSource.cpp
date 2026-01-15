@@ -17,9 +17,6 @@ namespace movement
             return;
 
         const ServerInputFrame& in = *_buffer.frame;
-        const uint32_t buttonsThisTick = in.buttonsThisTick; // down edge
-        const uint32_t buttonsDown     = in.buttonsDown;     // hold state
-        const uint32_t prevButtonsDown = in.prevButtonsDown; // last tick hold state
 
         // 1. 平面移动：使用 moveX/moveY + 当前 Yaw 计算期望水平速度
         float h = in.moveX; // -1..1
@@ -63,7 +60,7 @@ namespace movement
         }
 
         // 3. 按钮型事件：使用 buttonsThisTick 做“一帧 OR”，消费后清零
-        if (state.IsGrounded && GetKeyDown(buttonsThisTick, buttonsDown, prevButtonsDown, BUTTON_JUMP))
+        if (state.IsGrounded && GetKeyDown(in, BUTTON_JUMP))
         {
             command.VelocityImpulse.y += _jumpSpeed;
         }

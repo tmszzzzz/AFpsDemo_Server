@@ -104,31 +104,6 @@ static constexpr KeyCode BUTTON_SKILL_CTRL = 1u << 6;
 static constexpr KeyCode BUTTON_HIT_V = 1u << 7;
 static constexpr KeyCode BUTTON_RELOAD = 1u << 8;
 
-inline bool GetKeyDown(uint32_t buttonsThisTick, uint32_t buttonsDown, uint32_t prevButtonsDown, KeyCode keyMask)
-{
-    const bool edgeEvent   = (buttonsThisTick & keyMask) != 0; // 推荐主路径：事件边沿
-    const bool stateEdge   = ((buttonsDown & keyMask) != 0) && ((prevButtonsDown & keyMask) == 0); // 兜底：状态差分
-    return edgeEvent || stateEdge;
-}
-
-inline bool GetKey(uint32_t, uint32_t buttonsDown, uint32_t, KeyCode keyMask)
-{
-    return (buttonsDown & keyMask) != 0;
-}
-
-inline bool GetKeyUp(uint32_t, uint32_t buttonsDown, uint32_t prevButtonsDown, KeyCode keyMask)
-{
-    const bool wasDown = (prevButtonsDown & keyMask) != 0;
-    const bool isDown  = (buttonsDown & keyMask) != 0;
-    return wasDown && !isDown;
-}
-
-// 20Hz 世界快照（0.05 秒一帧）
-constexpr float SNAPSHOT_INTERVAL_SEC = 0.05f;
-
-// 角度弧度转换
-constexpr float DEG2RAD = 3.1415926535f / 180.0f;
-
 // 服务端每 tick 统一使用的输入视图：
 // - buttonsDown: 当前按住态（通常来自 lastInput.buttonMask）
 // - prevButtonsDown: 上一 tick 的按住态
@@ -146,5 +121,30 @@ struct ServerInputFrame
     float yaw = 0.0f;
     float pitch = 0.0f;
 };
+
+inline bool GetKeyDown(const ServerInputFrame& in, KeyCode keyMask)
+{
+    const bool edgeEvent   = (in.buttonsThisTick & keyMask) != 0; // 推荐主路径：事件边沿
+    const bool stateEdge   = ((in.buttonsDown & keyMask) != 0) && ((in.prevButtonsDown & keyMask) == 0); // 兜底：状态差分
+    return edgeEvent || stateEdge;
+}
+
+inline bool GetKey(const ServerInputFrame& in, KeyCode keyMask)
+{
+    return (in.buttonsDown & keyMask) != 0;
+}
+
+inline bool GetKeyUp(const ServerInputFrame& in, KeyCode keyMask)
+{
+    const bool wasDown = (in.prevButtonsDown & keyMask) != 0;
+    const bool isDown  = (in.buttonsDown & keyMask) != 0;
+    return wasDown && !isDown;
+}
+
+// 20Hz 世界快照（0.05 秒一帧）
+constexpr float SNAPSHOT_INTERVAL_SEC = 0.05f;
+
+// 角度弧度转换
+constexpr float DEG2RAD = 3.1415926535f / 180.0f;
 
 #endif //DEMO0_SERVER_UTILS_H

@@ -10,7 +10,7 @@
 namespace ability {
     bool DashAbility::WantsStart(const Context &ctx) const {
         const auto &in = *ctx.input;
-        return GetKeyDown(in.buttonsThisTick, in.buttonsDown, in.prevButtonsDown, BUTTON_SKILL_SHIFT);
+        return GetKeyDown(in, BUTTON_SKILL_SHIFT);
     }
 
     bool DashAbility::CanStart(const Context &ctx) const {
