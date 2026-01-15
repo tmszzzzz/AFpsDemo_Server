@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "../task/TaskAbility.h"
+#include "TaskAbility.h"
 #include "../AbilityResources.h"
 
 namespace ability

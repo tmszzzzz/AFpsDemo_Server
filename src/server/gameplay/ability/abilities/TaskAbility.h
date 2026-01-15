@@ -6,7 +6,7 @@
 #define DEMO0_SERVER_TASKABILITY_H
 
 #include "../AbilityBase.h"
-#include "AbilityTask.h"
+#include "../task/AbilityTask.h"
 #include <memory>
 
 namespace ability

@@ -9,7 +9,7 @@ set(ASIO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/src/third_party/asio")
 
 add_library(asio INTERFACE
         src/server/gameplay/ability/task/SeqTask.h
-        src/server/gameplay/ability/task/TaskAbility.h)
+        src/server/gameplay/ability/abilities/TaskAbility.h)
 target_include_directories(asio INTERFACE
         "${ASIO_ROOT}/include"
 )
