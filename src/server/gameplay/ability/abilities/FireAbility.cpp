@@ -9,13 +9,14 @@ namespace ability
 {
     bool FireAbility::WantsStart(const Context& ctx) const
     {
-        if (!ctx.input) return false;
         return GetKey(*ctx.input, MOUSE_FIRE_PRI);
     }
 
     bool FireAbility::CanStart(const Context& ctx) const
     {
         if (!ctx.ability) return false;
+        if (!ctx.input) return false;
+        if (ctx.weapon.magAmmo == 0) return false;
         return ctx.ability->tryFire != nullptr;
     }
 
@@ -30,6 +31,12 @@ namespace ability
         if (!_active) return;
 
         if (!ctx.input || !GetKey(*ctx.input, MOUSE_FIRE_PRI))
+        {
+            _active = false;
+            _phase = Phase::None;
+            return;
+        }
+        if (ctx.weapon.magAmmo == 0 && !ctx.weapon.isReloading)
         {
             _active = false;
             _phase = Phase::None;
