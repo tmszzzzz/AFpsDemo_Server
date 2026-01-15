@@ -5,6 +5,7 @@
 #include "HeroEntity.h"
 
 #include "../ability/abilities/DashAbility.h"
+#include "../ability/abilities/ReloadAbility.h"
 
 namespace gameplay
 {
@@ -12,9 +13,11 @@ namespace gameplay
             : _playerId(playerId)
             , _core(std::move(core))
             , _abilities()
+            , _weapon()
     {
         // MVP：默认装一个 DashAbility
         _abilities.Add(std::make_unique<ability::DashAbility>());
+        _abilities.Add(std::make_unique<ability::ReloadAbility>());
     }
 
     void HeroEntity::TickGameplay(float serverTimeSec,
@@ -38,8 +41,26 @@ namespace gameplay
         ctx.outActiveSlot = outActiveSlot;
         ctx.outActivePhase = outActivePhase;
 
-        ctx.requestDash = requestDash;
-        ctx.emitEvent = emitEvent;
+        ability::AbilityCallbacks abilityCallbacks{};
+        abilityCallbacks.requestDash = requestDash;
+        abilityCallbacks.emitEvent = emitEvent;
+        abilityCallbacks.beginReload = [this, emitEvent](uint32_t tick) {
+            _weapon.BeginReload(tick, _playerId, emitEvent);
+        };
+        abilityCallbacks.finishReload = [this, emitEvent](uint32_t tick) {
+            _weapon.CompleteReload(tick, _playerId, emitEvent);
+        };
+        abilityCallbacks.cancelReload = [this]() {
+            _weapon.CancelReload();
+        };
+        ctx.ability = &abilityCallbacks;
+
+        _weapon.Tick(in, dt, serverTick, _playerId, emitEvent);
+
+        const auto& ws = _weapon.State();
+        ctx.weapon.magAmmo = ws.magAmmo;
+        ctx.weapon.magSize = _weapon.MagSize();
+        ctx.weapon.isReloading = ws.isReloading;
 
         _abilities.Tick(ctx);
     }

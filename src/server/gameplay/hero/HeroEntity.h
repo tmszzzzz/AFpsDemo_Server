@@ -15,6 +15,7 @@
 #include "../hero/HeroCore.h"
 #include "../ability/AbilitySet.h"
 #include "../ability/AbilityContext.h"
+#include "../weapon/WeaponSystem.h"
 
 
 namespace gameplay
@@ -55,6 +56,7 @@ namespace gameplay
         std::unique_ptr<hero::HeroCore> _core;
 
         ability::AbilitySet _abilities;
+        weapon::WeaponSystem _weapon;
     };
 }
 

@@ -212,16 +212,18 @@ namespace ability
     void Arbiter::Tick(Context& ctx, AbilityBase* const* abilities, int count)
     {
         // 0) 注入 runtime 资源接口（Task scope 可用）
-        auto static ac = [this, &ctx](uint32_t bit, int prio) -> bool
+        ResourceCallbacks resources{};
+        auto ac = [this, &ctx](uint32_t bit, int prio) -> bool
         {
             return this->acquireRuntime(ctx, ctx.self, bit, prio);
         };
-        ctx.tryAcquireResource = ac;
-        auto static rl = [this, &ctx](uint32_t bit)
+        resources.tryAcquire = ac;
+        auto rl = [this, &ctx](uint32_t bit)
         {
             this->releaseRuntime(ctx.self, bit);
         };
-        ctx.releaseResource = rl;
+        resources.release = rl;
+        ctx.resources = &resources;
 
         // 1) Tick 所有 active（用 _actives；期间可能结束）
         //    结束后必须 unregister，以保持台账一致

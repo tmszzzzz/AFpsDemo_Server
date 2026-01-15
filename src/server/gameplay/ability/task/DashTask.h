@@ -18,7 +18,8 @@ namespace ability
         void Start(Context& ctx) override
         {
             _fired = false;
-            if (ctx.requestDash) ctx.requestDash(_dur, _speed);
+            if (ctx.ability && ctx.ability->requestDash)
+                ctx.ability->requestDash(_dur, _speed);
             _fired = true;
         }
 

@@ -40,7 +40,7 @@ namespace ability
         void registerAbility(AbilityBase* ab, uint32_t mask);
         void unregisterAbility(AbilityBase* ab);
 
-        // [ADD] 运行中资源申请/释放（给 ctx.tryAcquireResource / releaseResource 用）
+        // [ADD] 运行中资源申请/释放（给 ctx.resources 用）
         bool acquireRuntime(Context& ctx, AbilityBase* requester, uint32_t bit, int pNew);
         void releaseRuntime(AbilityBase* requester, uint32_t bit);
     };

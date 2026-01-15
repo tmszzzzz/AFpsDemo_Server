@@ -34,10 +34,10 @@ namespace ability
             // 1) 先拿资源；拿不到则不进入 scope
             if (!_acquired)
             {
-                if (!ctx.tryAcquireResource || !ctx.releaseResource)
+                if (!ctx.resources || !ctx.resources->tryAcquire || !ctx.resources->release)
                     return { TaskStatus::Failed };
 
-                const bool ok = ctx.tryAcquireResource(_bit, _prio);
+                const bool ok = ctx.resources->tryAcquire(_bit, _prio);
                 if (!ok)
                     return { (_mode == AcquireMode::Wait) ? TaskStatus::Running : TaskStatus::Failed };
 
@@ -89,7 +89,7 @@ namespace ability
             if (!_acquired) return;
 
             // 释放 owner 表占用（你们当前 releaseRuntime 正是干这个）
-            ctx.releaseResource(_bit);
+            ctx.resources->release(_bit);
 
             _acquired = false;
         }

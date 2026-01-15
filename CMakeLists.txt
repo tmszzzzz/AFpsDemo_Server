@@ -59,6 +59,7 @@ add_executable(Demo0_Server src/main.cpp
         src/server/gameplay/ability/task/InputGateTask.h
         src/server/gameplay/ability/task/ChargeHoldTask.h
         src/server/gameplay/ability/task/DashTask.h
+        src/server/gameplay/ability/task/CallFuncTask.h
         src/server/gameplay/ability/task/EmitEventTask.h
         src/server/gameplay/ability/AbilityArbiter.h
         src/server/gameplay/ability/AbilityArbiter.cpp
@@ -66,6 +67,11 @@ add_executable(Demo0_Server src/main.cpp
         src/server/gameplay/ability/AbilitySet.h
         src/server/gameplay/ability/abilities/DashAbility.cpp
         src/server/gameplay/ability/abilities/DashAbility.h
+        src/server/gameplay/ability/abilities/ReloadAbility.cpp
+        src/server/gameplay/ability/abilities/ReloadAbility.h
+        src/server/gameplay/weapon/WeaponState.h
+        src/server/gameplay/weapon/WeaponSystem.h
+        src/server/gameplay/weapon/WeaponSystem.cpp
         src/server/gameplay/hero/HeroEntity.cpp
         src/server/gameplay/hero/HeroEntity.h
         src/server/gameplay/movement/sources/DashMovementSource.cpp

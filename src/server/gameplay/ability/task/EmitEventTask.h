@@ -20,7 +20,8 @@ namespace ability
 
         void Start(Context& ctx) override
         {
-            if (ctx.emitEvent) ctx.emitEvent(_ev);
+            if (ctx.ability && ctx.ability->emitEvent)
+                ctx.ability->emitEvent(_ev);
         }
 
         TaskTickResult Tick(Context&) override { return { TaskStatus::Succeeded }; }

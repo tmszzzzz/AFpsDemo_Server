@@ -114,6 +114,10 @@ namespace proto
     enum class GameEventType : uint8_t
     {
         DashStarted = 1, // M3占位
+        WeaponFired = 2,
+        WeaponDryFire = 3,
+        WeaponReloadStarted = 4,
+        WeaponReloadFinished = 5,
     };
 
     //GameEvent: S -> C
