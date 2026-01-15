@@ -78,23 +78,7 @@ namespace weapon
             return;
 
         if (_state.magAmmo <= 0)
-        {
-            if (emitEvent)
-            {
-                proto::GameEvent ev{};
-                ev.type = proto::GameEventType::WeaponDryFire;
-                ev.serverTick = serverTick;
-                ev.casterPlayerId = ownerPlayerId;
-                ev.targetId = 0;
-                ev.u8Param0 = 0;
-                ev.u8Param1 = 0;
-                ev.u32Param0 = 0;
-                ev.f32Param0 = 0.0f;
-                ev.f32Param1 = 0.0f;
-                emitEvent(ev);
-            }
             return;
-        }
 
         _state.magAmmo -= 1;
         _state.fireCooldown = _cfg.fireIntervalSec;

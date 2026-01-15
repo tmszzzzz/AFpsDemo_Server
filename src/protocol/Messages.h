@@ -115,7 +115,6 @@ namespace proto
     {
         DashStarted = 1, // M3占位
         WeaponFired = 2,
-        WeaponDryFire = 3,
         WeaponReloadStarted = 4,
         WeaponReloadFinished = 5,
         MeleeHit = 6,

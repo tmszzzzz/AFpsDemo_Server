@@ -12,9 +12,10 @@ namespace ability
 {
     bool ReloadAbility::WantsStart(const Context& ctx) const
     {
-        if (!ctx.input) return false;
         if (ctx.weapon.isReloading) return false;
         if (ctx.weapon.magAmmo >= ctx.weapon.magSize) return false;
+        if (ctx.weapon.magAmmo == 0) return true;
+        if (!ctx.input) return false;
         return GetKeyDown(*ctx.input, BUTTON_RELOAD);
     }
 
