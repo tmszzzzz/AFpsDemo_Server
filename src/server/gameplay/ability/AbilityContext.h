@@ -27,7 +27,7 @@ namespace ability
         std::function<void(const proto::GameEvent&)> emitEvent;
 
         // 对接武器开火（由 HeroEntity 绑定）
-        std::function<void(uint32_t serverTick)> tryFire;
+        std::function<void(uint32_t serverTick, const Vec3& origin, const Vec3& direction)> tryFire;
 
         // 武器换弹接口（由 HeroEntity 绑定）
         std::function<void(uint32_t serverTick)> beginReload;
@@ -59,6 +59,9 @@ namespace ability
         ResourceCallbacks* resources = nullptr;
 
         WeaponSnapshot weapon{};
+
+        Vec3 fireOrigin = Vec3::zero();
+        Vec3 fireDirection = Vec3{0, 0, 1};
 
         // =========================
         // Arbiter 注入：当前正在被调用的 ability

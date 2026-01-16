@@ -8,6 +8,7 @@
 #include "../ability/abilities/FireAbility.h"
 #include "../ability/abilities/MeleeAbility.h"
 #include "../ability/abilities/ReloadAbility.h"
+#include "../../../utils/Utils.h"
 
 namespace gameplay
 {
@@ -48,8 +49,8 @@ namespace gameplay
         ability::AbilityCallbacks abilityCallbacks{};
         abilityCallbacks.requestDash = requestDash;
         abilityCallbacks.emitEvent = emitEvent;
-        abilityCallbacks.tryFire = [this, emitEvent](uint32_t tick) {
-            _weapon.TryFire(tick, _playerId, emitEvent);
+        abilityCallbacks.tryFire = [this, emitEvent](uint32_t tick, const Vec3& origin, const Vec3& dir) {
+            _weapon.TryFire(tick, _playerId, emitEvent, origin, dir);
         };
         abilityCallbacks.beginReload = [this, emitEvent](uint32_t tick) {
             _weapon.BeginReload(tick, _playerId, emitEvent);
@@ -69,7 +70,22 @@ namespace gameplay
         ctx.weapon.magSize = _weapon.MagSize();
         ctx.weapon.isReloading = ws.isReloading;
 
+        const auto& mv = _core->Movement();
+        const float yawRad = mv.Yaw * DEG2RAD;
+        const float pitchRad = mv.Pitch * DEG2RAD;
+        ctx.fireOrigin = mv.Position;
+        ctx.fireDirection = Vec3{
+                std::sin(yawRad) * std::cos(pitchRad),
+                -std::sin(pitchRad),
+                std::cos(yawRad) * std::cos(pitchRad)
+        }.normalized();
+
         _abilities.Tick(ctx);
+    }
+
+    void HeroEntity::CollectProjectileSpawns(std::vector<projectile::SpawnDesc>& out)
+    {
+        _weapon.CollectPendingSpawns(out);
     }
 }
 

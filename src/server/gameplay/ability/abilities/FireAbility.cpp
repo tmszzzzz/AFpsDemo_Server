@@ -47,7 +47,7 @@ namespace ability
         if (ctx.outActivePhase) *ctx.outActivePhase = static_cast<uint8_t>(_phase);
 
         if (ctx.ability && ctx.ability->tryFire)
-            ctx.ability->tryFire(ctx.serverTick);
+            ctx.ability->tryFire(ctx.serverTick, ctx.fireOrigin, ctx.fireDirection);
     }
 
     void FireAbility::Cancel(Context&)

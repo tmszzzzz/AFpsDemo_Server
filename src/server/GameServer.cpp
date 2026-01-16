@@ -7,7 +7,9 @@
 #include "kcc/KCC.h"
 #include "gameplay/movement/sources/NetworkInputMovementSource.h"
 #include "gameplay/movement/sources/DashMovementSource.h"
+#include "collision/CollisionQueries.h"
 #include <iostream>
+#include <cmath>
 
 GameServer::GameServer()
 {
@@ -58,6 +60,8 @@ void GameServer::Tick(float dt) {
     static const float kCapsuleRadius     = 0.5f;
     static const float kCapsuleHalfHeight = 0.5f;
 
+    std::vector<projectile::SpawnDesc> pendingSpawns;
+
     // 3. 遍历所有玩家，驱动 HeroCore + KCC
     for (auto& kv : _clients) {
         ClientInfo &info = kv.second;
@@ -100,12 +104,12 @@ void GameServer::Tick(float dt) {
 
         info.inputFrame.prevButtonsDown = info.inputFrame.buttonsDown;
 
-        auto static requestDash = [&](float durationSec, float speed) {
+        auto requestDash = [&](float durationSec, float speed) {
             auto dashSrc = std::make_shared<movement::DashMovementSource>(durationSec, speed);
             info.hero->Core().AddMovementSource(dashSrc);
         };
 
-        auto static emitEvent = [&](const proto::GameEvent &ev) {
+        auto emitEvent = [&](const proto::GameEvent &ev) {
             BroadcastGameEvent(ev, /*reliableTcp=*/false);
         };
 
@@ -118,6 +122,88 @@ void GameServer::Tick(float dt) {
                                 nullptr,
                                 nullptr);
 
+        info.hero->CollectProjectileSpawns(pendingSpawns);
+
+    }
+
+    projectile::CollisionQuery query{};
+    query.raycastWorld = [&](const Vec3& origin, const Vec3& dir, float maxDist, projectile::HitResult& outHit) -> bool
+    {
+        collision::RaycastHit hit{};
+        if (!collision::RaycastWorld(g_collisionWorld, origin, dir, maxDist, hit))
+            return false;
+
+        outHit.hit = true;
+        outHit.t = hit.t;
+        outHit.point = hit.point;
+        outHit.normal = hit.normal;
+        outHit.targetId = 0;
+        outHit.isActor = false;
+        return true;
+    };
+
+    query.raycastActor = [&](uint32_t ownerId, const Vec3& origin, const Vec3& dir, float maxDist, projectile::HitResult& outHit) -> bool
+    {
+        float bestT = maxDist + 1.0f;
+        bool found = false;
+
+        for (const auto& kv : _clients)
+        {
+            const ClientInfo& info = kv.second;
+            if (!info.hero)
+                continue;
+            if (info.playerId == ownerId)
+                continue;
+
+            const Vec3 center = info.hero->Core().Movement().Position;
+            const Vec3 oc = origin - center;
+            const float b = oc.dot(dir);
+            const float c = oc.sqrMagnitude() - (kCapsuleRadius * kCapsuleRadius);
+            const float disc = b * b - c;
+            if (disc < 0.0f)
+                continue;
+
+            const float s = std::sqrt(disc);
+            float t = -b - s;
+            if (t < 0.0f)
+                t = -b + s;
+            if (t < 0.0f || t > maxDist)
+                continue;
+
+            if (t < bestT)
+            {
+                bestT = t;
+                outHit.hit = true;
+                outHit.t = t;
+                outHit.point = origin + dir * t;
+                outHit.normal = (outHit.point - center).normalized();
+                outHit.targetId = info.playerId;
+                outHit.isActor = true;
+                found = true;
+            }
+        }
+
+        return found;
+    };
+
+    for (const auto& spawn : pendingSpawns)
+    {
+        if (spawn.kind == projectile::ProjectileKind::Hitscan)
+            _projectiles.FireHitscan(spawn, query);
+        else
+            _projectiles.Spawn(spawn);
+    }
+
+    _projectiles.Tick(dt, query);
+
+    std::vector<projectile::ProjectileEvent> projEvents;
+    _projectiles.CollectEvents(projEvents);
+    for (const auto& ev : projEvents)
+    {
+        if (ev.type == projectile::EventType::HitActor)
+            std::cout << "Projectile hit actor " << ev.targetId << "\n";
+        else if (ev.type == projectile::EventType::HitWorld)
+            std::cout << "Projectile hit world\n";
     }
 
     // [M3-2.6] 基于定时器的 WorldSnapshot 广播

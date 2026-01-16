@@ -45,9 +45,11 @@ namespace weapon
 
     void WeaponSystem::TryFire(uint32_t serverTick,
                                uint32_t ownerPlayerId,
-                               const std::function<void(const proto::GameEvent&)>& emitEvent)
+                               const std::function<void(const proto::GameEvent&)>& emitEvent,
+                               const Vec3& origin,
+                               const Vec3& direction)
     {
-        tryFire(serverTick, ownerPlayerId, emitEvent);
+        tryFire(serverTick, ownerPlayerId, emitEvent, origin, direction);
     }
 
     void WeaponSystem::BeginReload(uint32_t serverTick,
@@ -72,7 +74,9 @@ namespace weapon
 
     void WeaponSystem::tryFire(uint32_t serverTick,
                                uint32_t ownerPlayerId,
-                               const std::function<void(const proto::GameEvent&)>& emitEvent)
+                               const std::function<void(const proto::GameEvent&)>& emitEvent,
+                               const Vec3& origin,
+                               const Vec3& direction)
     {
         if (_state.isReloading || _state.fireCooldown > 0.0f)
             return;
@@ -97,6 +101,23 @@ namespace weapon
             ev.f32Param1 = 0.0f;
             emitEvent(ev);
         }
+
+        projectile::SpawnDesc spawn{};
+        spawn.kind = _cfg.projectileKind;
+        spawn.origin = origin;
+        spawn.direction = direction;
+        spawn.speed = _cfg.projectileSpeed;
+        spawn.maxDistance = _cfg.projectileMaxDistance;
+        spawn.lifeTime = _cfg.projectileLifeTime;
+        spawn.radius = _cfg.projectileRadius;
+        spawn.ownerPlayerId = ownerPlayerId;
+        _pendingSpawns.push_back(spawn);
+    }
+
+    void WeaponSystem::CollectPendingSpawns(std::vector<projectile::SpawnDesc>& out)
+    {
+        out.insert(out.end(), _pendingSpawns.begin(), _pendingSpawns.end());
+        _pendingSpawns.clear();
     }
 
     void WeaponSystem::startReload(uint32_t serverTick,

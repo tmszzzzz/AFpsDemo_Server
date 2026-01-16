@@ -9,6 +9,7 @@
 #include "../protocol/Messages.h"
 #include "gameplay/hero/HeroEntity.h"
 #include "collision/CollisionWorld.h"
+#include "gameplay/projectile/ProjectileSystem.h"
 #include <cstdint>
 #include <unordered_map>
 #include <vector>
@@ -69,6 +70,8 @@ private:
     std::unordered_map<uint32_t, ClientInfo> _clients; // connId -> info
 
     std::vector<OutgoingPacket> _outgoing; // 每 tick 挤出来的待发包
+
+    projectile::ProjectileSystem _projectiles;
 
     void handleJoinRequest(uint32_t connectionId, const proto::Message& msg);
     void handlePing(uint32_t connectionId, const proto::Message& msg);

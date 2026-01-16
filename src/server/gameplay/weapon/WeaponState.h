@@ -6,6 +6,7 @@
 #define DEMO0_SERVER_WEAPONSTATE_H
 
 #include <cstdint>
+#include "../projectile/ProjectileSystem.h"
 
 namespace weapon
 {
@@ -15,6 +16,12 @@ namespace weapon
         float fireIntervalSec = 0.1f;
         float reloadSec = 1.5f;
         bool  allowAutoReload = true;
+
+        projectile::ProjectileKind projectileKind = projectile::ProjectileKind::Hitscan;
+        float projectileSpeed = 60.0f;
+        float projectileMaxDistance = 100.0f;
+        float projectileLifeTime = 3.0f;
+        float projectileRadius = 0.0f;
     };
 
     struct WeaponState

@@ -16,6 +16,7 @@
 #include "../ability/AbilitySet.h"
 #include "../ability/AbilityContext.h"
 #include "../weapon/WeaponSystem.h"
+#include "../projectile/ProjectileSystem.h"
 
 
 namespace gameplay
@@ -50,6 +51,8 @@ namespace gameplay
 
         ability::AbilitySet& Abilities() { return _abilities; }
         const ability::AbilitySet& Abilities() const { return _abilities; }
+
+        void CollectProjectileSpawns(std::vector<projectile::SpawnDesc>& out);
 
     private:
         uint32_t _playerId = 0;

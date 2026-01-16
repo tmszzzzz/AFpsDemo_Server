@@ -35,6 +35,8 @@ add_executable(Demo0_Server src/main.cpp
         src/net/NetTransport.cpp
         src/server/collision/CollisionWorld.h
         src/server/collision/CollisionWorld.cpp
+        src/server/collision/CollisionQueries.h
+        src/server/collision/CollisionQueries.cpp
         src/server/gameplay/movement/sources/IMovementSource.h
         src/utils/Utils.h
         src/server/gameplay/movement/core/PlayerState.h
@@ -83,6 +85,8 @@ add_executable(Demo0_Server src/main.cpp
         src/server/gameplay/ability/AbilityResources.h
         src/server/gameplay/ability/AbilityFwd.h
         src/server/gameplay/ability/task/ScopedResourceTask.h
+        src/server/gameplay/projectile/ProjectileSystem.h
+        src/server/gameplay/projectile/ProjectileSystem.cpp
 )
 
 target_link_libraries(Demo0_Server
