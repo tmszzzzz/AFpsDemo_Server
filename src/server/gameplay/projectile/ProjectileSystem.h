@@ -79,7 +79,7 @@ namespace projectile
         void Tick(float dt, const CollisionQuery& query);
         void CollectEvents(std::vector<ProjectileEvent>& out);
 
-        bool FireHitscan(const SpawnDesc& desc, const CollisionQuery& query);
+        uint32_t FireHitscan(const SpawnDesc& desc, const CollisionQuery& query);
 
     private:
         struct Projectile

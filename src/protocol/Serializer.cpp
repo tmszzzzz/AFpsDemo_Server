@@ -224,6 +224,10 @@ namespace proto
 
         w.writeF32(msg.f32Param0);
         w.writeF32(msg.f32Param1);
+        w.writeF32(msg.f32Param2);
+        w.writeF32(msg.f32Param3);
+        w.writeF32(msg.f32Param4);
+        w.writeF32(msg.f32Param5);
 
         out.header.length = static_cast<uint16_t>(sizeof(MsgHeader) + out.payload.size());
     }

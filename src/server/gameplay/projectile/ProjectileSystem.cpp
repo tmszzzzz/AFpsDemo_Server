@@ -25,10 +25,10 @@ namespace projectile
         return p.id;
     }
 
-    bool ProjectileSystem::FireHitscan(const SpawnDesc& desc, const CollisionQuery& query)
+    uint32_t ProjectileSystem::FireHitscan(const SpawnDesc& desc, const CollisionQuery& query)
     {
         if (desc.kind != ProjectileKind::Hitscan)
-            return false;
+            return 0;
 
         HitResult best{};
         bool found = false;
@@ -56,14 +56,15 @@ namespace projectile
             }
         }
 
+        const uint32_t id = _nextId++;
         if (!found)
-            return false;
+            return id;
 
         Projectile p{};
-        p.id = _nextId++;
+        p.id = id;
         p.ownerPlayerId = desc.ownerPlayerId;
         emitHitEvent(p, best);
-        return true;
+        return id;
     }
 
     void ProjectileSystem::Tick(float dt, const CollisionQuery& query)

@@ -7,7 +7,6 @@
 #include "kcc/KCC.h"
 #include "gameplay/movement/sources/NetworkInputMovementSource.h"
 #include "gameplay/movement/sources/DashMovementSource.h"
-#include "collision/CollisionQueries.h"
 #include <iostream>
 #include <cmath>
 
@@ -21,6 +20,8 @@ GameServer::GameServer()
 
     std::cout << "Loaded collision world: "
               << g_collisionWorld.boxes.size() << " boxes\n";
+
+    _physicsWorld.SetStaticWorld(&g_collisionWorld);
 
     std::cout << "GameServer created\n";
 }
@@ -102,6 +103,8 @@ void GameServer::Tick(float dt) {
                 kCapsuleHalfHeight
         );
 
+        _physicsWorld.UpdateActorCapsule(info.playerId, mvState.Position);
+
         info.inputFrame.prevButtonsDown = info.inputFrame.buttonsDown;
 
         auto requestDash = [&](float durationSec, float speed) {
@@ -130,7 +133,7 @@ void GameServer::Tick(float dt) {
     query.raycastWorld = [&](const Vec3& origin, const Vec3& dir, float maxDist, projectile::HitResult& outHit) -> bool
     {
         collision::RaycastHit hit{};
-        if (!collision::RaycastWorld(g_collisionWorld, origin, dir, maxDist, hit))
+        if (!_physicsWorld.RaycastWorld(origin, dir, maxDist, hit))
             return false;
 
         outHit.hit = true;
@@ -144,54 +147,61 @@ void GameServer::Tick(float dt) {
 
     query.raycastActor = [&](uint32_t ownerId, const Vec3& origin, const Vec3& dir, float maxDist, projectile::HitResult& outHit) -> bool
     {
-        float bestT = maxDist + 1.0f;
-        bool found = false;
+        collision::RaycastHit hit{};
+        if (!_physicsWorld.RaycastActors(ownerId, origin, dir, maxDist, hit))
+            return false;
 
-        for (const auto& kv : _clients)
-        {
-            const ClientInfo& info = kv.second;
-            if (!info.hero)
-                continue;
-            if (info.playerId == ownerId)
-                continue;
-
-            const Vec3 center = info.hero->Core().Movement().Position;
-            const Vec3 oc = origin - center;
-            const float b = oc.dot(dir);
-            const float c = oc.sqrMagnitude() - (kCapsuleRadius * kCapsuleRadius);
-            const float disc = b * b - c;
-            if (disc < 0.0f)
-                continue;
-
-            const float s = std::sqrt(disc);
-            float t = -b - s;
-            if (t < 0.0f)
-                t = -b + s;
-            if (t < 0.0f || t > maxDist)
-                continue;
-
-            if (t < bestT)
-            {
-                bestT = t;
-                outHit.hit = true;
-                outHit.t = t;
-                outHit.point = origin + dir * t;
-                outHit.normal = (outHit.point - center).normalized();
-                outHit.targetId = info.playerId;
-                outHit.isActor = true;
-                found = true;
-            }
-        }
-
-        return found;
+        outHit.hit = true;
+        outHit.t = hit.t;
+        outHit.point = hit.point;
+        outHit.normal = hit.normal;
+        outHit.targetId = hit.targetId;
+        outHit.isActor = true;
+        return true;
     };
 
     for (const auto& spawn : pendingSpawns)
     {
         if (spawn.kind == projectile::ProjectileKind::Hitscan)
-            _projectiles.FireHitscan(spawn, query);
+        {
+            uint32_t projId = _projectiles.FireHitscan(spawn, query);
+
+            proto::GameEvent ev{};
+            ev.type = proto::GameEventType::ProjectileSpawn;
+            ev.serverTick = _serverTick;
+            ev.casterPlayerId = spawn.ownerPlayerId;
+            ev.targetId = 0;
+            ev.u8Param0 = static_cast<uint8_t>(spawn.kind);
+            ev.u8Param1 = 0;
+            ev.u32Param0 = projId;
+            ev.f32Param0 = spawn.origin.x;
+            ev.f32Param1 = spawn.origin.y;
+            ev.f32Param2 = spawn.origin.z;
+            ev.f32Param3 = spawn.direction.x;
+            ev.f32Param4 = spawn.direction.y;
+            ev.f32Param5 = spawn.direction.z;
+            BroadcastGameEvent(ev, /*reliableTcp=*/false);
+        }
         else
-            _projectiles.Spawn(spawn);
+        {
+            uint32_t projId = _projectiles.Spawn(spawn);
+
+            proto::GameEvent ev{};
+            ev.type = proto::GameEventType::ProjectileSpawn;
+            ev.serverTick = _serverTick;
+            ev.casterPlayerId = spawn.ownerPlayerId;
+            ev.targetId = 0;
+            ev.u8Param0 = static_cast<uint8_t>(spawn.kind);
+            ev.u8Param1 = 0;
+            ev.u32Param0 = projId;
+            ev.f32Param0 = spawn.origin.x;
+            ev.f32Param1 = spawn.origin.y;
+            ev.f32Param2 = spawn.origin.z;
+            ev.f32Param3 = spawn.direction.x;
+            ev.f32Param4 = spawn.direction.y;
+            ev.f32Param5 = spawn.direction.z;
+            BroadcastGameEvent(ev, /*reliableTcp=*/false);
+        }
     }
 
     _projectiles.Tick(dt, query);
@@ -200,10 +210,26 @@ void GameServer::Tick(float dt) {
     _projectiles.CollectEvents(projEvents);
     for (const auto& ev : projEvents)
     {
-        if (ev.type == projectile::EventType::HitActor)
-            std::cout << "Projectile hit actor " << ev.targetId << "\n";
-        else if (ev.type == projectile::EventType::HitWorld)
-            std::cout << "Projectile hit world\n";
+        if (ev.type == projectile::EventType::HitActor || ev.type == projectile::EventType::HitWorld)
+        {
+            proto::GameEvent ge{};
+            ge.type = (ev.type == projectile::EventType::HitActor)
+                          ? proto::GameEventType::ProjectileHitActor
+                          : proto::GameEventType::ProjectileHitWorld;
+            ge.serverTick = _serverTick;
+            ge.casterPlayerId = ev.ownerPlayerId;
+            ge.targetId = ev.targetId;
+            ge.u8Param0 = 0;
+            ge.u8Param1 = 0;
+            ge.u32Param0 = ev.projectileId;
+            ge.f32Param0 = ev.point.x;
+            ge.f32Param1 = ev.point.y;
+            ge.f32Param2 = ev.point.z;
+            ge.f32Param3 = ev.normal.x;
+            ge.f32Param4 = ev.normal.y;
+            ge.f32Param5 = ev.normal.z;
+            BroadcastGameEvent(ge, /*reliableTcp=*/false);
+        }
     }
 
     // [M3-2.6] 基于定时器的 WorldSnapshot 广播
@@ -266,6 +292,7 @@ void GameServer::OnConnectionClosed(uint32_t connectionId)
     {
         std::cout << "Player " << it->second.playerId
                   << " disconnected (conn=" << connectionId << ")\n";
+        _physicsWorld.UnregisterActor(it->second.playerId);
         _clients.erase(it);
     }
 }
@@ -301,6 +328,9 @@ void GameServer::handleJoinRequest(uint32_t connectionId, const proto::Message& 
     Vec3 spawnPos{0.0f, 1.0f, 0.0f};
     auto core = std::make_unique<hero::HeroCore>(hero::HeroId::Generic,spawnPos,heroCfg);
     info.hero = std::make_unique<gameplay::HeroEntity>(info.playerId, std::move(core));
+
+    // Register actor capsule once; positions updated each tick.
+    _physicsWorld.RegisterActorCapsule(info.playerId, 0.5f, 0.5f);
 
     // 为这个 Hero 挂一个 NetworkInputMovementSource
     movement::NetworkInputMovementSource::NetInputBuffer buffer{};

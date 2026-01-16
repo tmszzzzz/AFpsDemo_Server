@@ -37,6 +37,8 @@ add_executable(Demo0_Server src/main.cpp
         src/server/collision/CollisionWorld.cpp
         src/server/collision/CollisionQueries.h
         src/server/collision/CollisionQueries.cpp
+        src/server/collision/PhysicsWorld.h
+        src/server/collision/PhysicsWorld.cpp
         src/server/gameplay/movement/sources/IMovementSource.h
         src/utils/Utils.h
         src/server/gameplay/movement/core/PlayerState.h

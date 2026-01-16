@@ -16,6 +16,7 @@ namespace collision
         Vec3 point;
         Vec3 normal;
         const Obb* obb = nullptr;
+        uint32_t targetId = 0;
     };
 
     bool RaycastWorld(const CollisionWorld& world,

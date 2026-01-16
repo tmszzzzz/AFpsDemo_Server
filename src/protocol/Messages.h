@@ -118,6 +118,9 @@ namespace proto
         WeaponReloadStarted = 4,
         WeaponReloadFinished = 5,
         MeleeHit = 6,
+        ProjectileSpawn = 7,
+        ProjectileHitWorld = 8,
+        ProjectileHitActor = 9,
     };
 
     //GameEvent: S -> C
@@ -137,6 +140,10 @@ namespace proto
 
         float    f32Param0;       // 通用 F32 参数槽
         float    f32Param1;       // 通用 F32 参数槽
+        float    f32Param2;
+        float    f32Param3;
+        float    f32Param4;
+        float    f32Param5;
     };
 
     // 泛型消息包装

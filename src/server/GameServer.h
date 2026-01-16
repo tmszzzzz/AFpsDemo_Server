@@ -9,6 +9,7 @@
 #include "../protocol/Messages.h"
 #include "gameplay/hero/HeroEntity.h"
 #include "collision/CollisionWorld.h"
+#include "collision/PhysicsWorld.h"
 #include "gameplay/projectile/ProjectileSystem.h"
 #include <cstdint>
 #include <unordered_map>
@@ -43,6 +44,7 @@ public:
     bool FindConnIdByPlayerId(uint32_t playerId, uint32_t& outConnId) const;
 
     collision::CollisionWorld g_collisionWorld;
+    collision::PhysicsWorld _physicsWorld;
 
 private:
     struct ClientInfo {
