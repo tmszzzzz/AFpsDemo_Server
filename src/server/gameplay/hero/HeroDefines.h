@@ -20,6 +20,7 @@ namespace hero
     struct HeroConfig
     {
         float MaxHp = 100.0f;
+        float ViewHeight = 1.6f;
 
         // CharacterMotor 所需参数
         float Gravity  = 20.0f;

@@ -73,7 +73,7 @@ namespace gameplay
         const auto& mv = _core->Movement();
         const float yawRad = mv.Yaw * DEG2RAD;
         const float pitchRad = mv.Pitch * DEG2RAD;
-        ctx.fireOrigin = mv.Position;
+        ctx.fireOrigin = mv.Position + Vec3{0.0f, _core->ViewHeight(), 0.0f};
         ctx.fireDirection = Vec3{
                 std::sin(yawRad) * std::cos(pitchRad),
                 -std::sin(pitchRad),

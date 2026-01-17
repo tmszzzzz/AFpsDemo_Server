@@ -12,6 +12,7 @@ namespace hero
                        const Vec3& spawnPos,
                        const HeroConfig& config)
     {
+        _viewHeight = config.ViewHeight;
         // 配置 CharacterMotor
         _motor.Gravity  = config.Gravity;
         _motor.MinPitch = config.MinPitch;
@@ -62,4 +63,3 @@ namespace hero
         _movementSources.AddSource(std::move(src));
     }
 }
-

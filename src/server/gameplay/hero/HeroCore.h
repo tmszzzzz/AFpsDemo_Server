@@ -28,6 +28,7 @@ namespace hero
 
         movement::PlayerState&       Movement()       { return _state.playerState; }
         const movement::PlayerState& Movement() const { return _state.playerState; }
+        float ViewHeight() const { return _viewHeight; }
 
         // 一帧运动逻辑（不做碰撞，只算理想位移）
         void TickMovement(float                        deltaTime,
@@ -44,6 +45,7 @@ namespace hero
         HeroState                        _state;
         movement::CharacterMotor         _motor;
         movement::MovementSourceCollection _movementSources;
+        float _viewHeight = 1.6f;
     };
 }
 
