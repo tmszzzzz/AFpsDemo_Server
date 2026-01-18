@@ -66,6 +66,8 @@ namespace kcc {
 
         // 贴地距离：角色在空中但脚底非常接近地面时，会尝试向下 snap。
         float groundSnapDistance = 0.5f;
+        // 空中时的贴地距离（可比地面小，减少“吸地”）
+        float groundSnapDistanceAir = 0.1f;
 
         // 碰撞后 slide 的最小速度阈值（太小就认为停下）
         float minSlideSpeed = 0.01f;
@@ -110,7 +112,8 @@ namespace kcc {
     MoveResult MoveCapsule(const collision::CollisionWorld &world,
                            Capsule &capsule,
                            const Vec3 &desiredDelta,
-                           const Settings &settings);
+                           const Settings &settings,
+                           bool startGrounded);
 
     /// 一个方便给 gameplay 用的薄封装：直接基于 PlayerState 操作。
     ///
@@ -130,7 +133,13 @@ namespace kcc {
         capsule.radius = capsuleRadius;
         capsule.halfHeight = capsuleHalfHeight;
 
-        MoveResult result = MoveCapsule(world, capsule, desiredDelta, settings);
+        MoveResult result = MoveCapsule(
+                world,
+                capsule,
+                desiredDelta,
+                settings,
+                state.IsGrounded
+        );
 
         //Vec3 v = state.Velocity;
 //

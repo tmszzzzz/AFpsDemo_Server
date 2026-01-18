@@ -639,7 +639,8 @@ namespace kcc
     MoveResult MoveCapsule(const collision::CollisionWorld& world,
                            Capsule&              capsule,
                            const Vec3&           desiredDelta,
-                           const Settings&       settings)
+                           const Settings&       settings,
+                           bool                  startGrounded)
     {
         MoveResult result;
 
@@ -651,8 +652,15 @@ namespace kcc
         {
             ResolveInitialPenetration(world, capsule, settings);
 
-            // 这里不立即判断 ground，交由 DoGroundSnap 统一处理
-            DoGroundSnap(world, capsule, settings, result);
+            // Only snap when not moving up; use shorter snap distance in air.
+            if (desiredDelta.y <= 0.0f)
+            {
+                Settings snapSettings = settings;
+                snapSettings.groundSnapDistance = startGrounded
+                                                  ? settings.groundSnapDistance
+                                                  : settings.groundSnapDistanceAir;
+                DoGroundSnap(world, capsule, snapSettings, result);
+            }
 
             result.appliedDisplacement = capsule.center - originalCenter;
             return result;
@@ -774,7 +782,14 @@ namespace kcc
             result.groundObject = bestGroundObb;
         }
 
-        if (desiredDelta.y <= 0.0f) DoGroundSnap(world, capsule, settings, result);
+        if (desiredDelta.y <= 0.0f)
+        {
+            Settings snapSettings = settings;
+            snapSettings.groundSnapDistance = startGrounded
+                                              ? settings.groundSnapDistance
+                                              : settings.groundSnapDistanceAir;
+            DoGroundSnap(world, capsule, snapSettings, result);
+        }
 
         result.appliedDisplacement = capsule.center - originalCenter;
         return result;
