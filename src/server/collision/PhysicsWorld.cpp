@@ -27,6 +27,35 @@ namespace collision
             return a + ab * t;
         }
 
+        bool RaySphereIntersect(const Vec3& origin,
+                                const Vec3& dir,
+                                float maxDist,
+                                const Vec3& center,
+                                float radius,
+                                float& outT,
+                                Vec3& outNormal)
+        {
+            Vec3 oc = origin - center;
+            float b = oc.dot(dir);
+            float c = oc.dot(oc) - radius * radius;
+            float h = b * b - c;
+            if (h < 0.0f)
+                return false;
+
+            float sqrtH = std::sqrt(h);
+            float t = -b - sqrtH;
+            if (t < 0.0f)
+                t = -b + sqrtH;
+            if (t < 0.0f || t > maxDist)
+                return false;
+
+            Vec3 hitPoint = origin + dir * t;
+            Vec3 n = hitPoint - center;
+            outT = t;
+            outNormal = (n.sqrMagnitude() > 1e-6f) ? n.normalized() : dir * -1.0f;
+            return true;
+        }
+
         bool RaycastCapsule(const Vec3& origin,
                             const Vec3& dir,
                             float maxDist,
@@ -36,32 +65,80 @@ namespace collision
                             collision::RaycastHit& outHit)
         {
             Vec3 d = dir.normalized();
-            Vec3 ab = b - a;
+            Vec3 ba = b - a;
+            Vec3 oa = origin - a;
 
-            // Find the closest approach between ray and segment.
-            float tSeg = 0.0f;
-            float tRay = 0.0f;
+            float baba = ba.dot(ba);
+            float bard = ba.dot(d);
+            float baoa = ba.dot(oa);
+            float rdoa = d.dot(oa);
+            float oaoa = oa.dot(oa);
 
-            // Approximate by sampling the closest point on segment to ray origin + projection.
-            float proj = (a - origin).dot(d);
-            Vec3 p = origin + d * std::max(0.0f, proj);
-            Vec3 c = ClosestPointOnSegment(a, b, p, tSeg);
+            float aCoeff = baba - bard * bard;
+            float bCoeff = baba * rdoa - baoa * bard;
+            float cCoeff = baba * oaoa - baoa * baoa - radius * radius * baba;
 
-            Vec3 oc = c - origin;
-            tRay = oc.dot(d);
-            if (tRay < 0.0f)
-                tRay = 0.0f;
+            float bestT = maxDist + 1.0f;
+            Vec3 bestNormal = Vec3::zero();
+            Vec3 bestPoint = Vec3::zero();
+            bool found = false;
 
-            Vec3 closest = origin + d * tRay;
-            float dist2 = (closest - c).sqrMagnitude();
-            if (dist2 > radius * radius || tRay > maxDist)
+            const float eps = 1e-6f;
+
+            if (std::fabs(aCoeff) > eps)
+            {
+                float h = bCoeff * bCoeff - aCoeff * cCoeff;
+                if (h >= 0.0f)
+                {
+                    float t = (-bCoeff - std::sqrt(h)) / aCoeff;
+                    if (t >= 0.0f && t <= maxDist)
+                    {
+                        float y = baoa + t * bard;
+                        if (y > 0.0f && y < baba)
+                        {
+                            Vec3 point = origin + d * t;
+                            Vec3 axisPoint = a + ba * (y / baba);
+                            Vec3 n = point - axisPoint;
+                            bestT = t;
+                            bestPoint = point;
+                            bestNormal = (n.sqrMagnitude() > 1e-6f) ? n.normalized() : d * -1.0f;
+                            found = true;
+                        }
+                    }
+                }
+            }
+
+            float capT = 0.0f;
+            Vec3 capNormal = Vec3::zero();
+            if (RaySphereIntersect(origin, d, maxDist, a, radius, capT, capNormal))
+            {
+                if (capT < bestT)
+                {
+                    bestT = capT;
+                    bestPoint = origin + d * capT;
+                    bestNormal = capNormal;
+                    found = true;
+                }
+            }
+
+            if (RaySphereIntersect(origin, d, maxDist, b, radius, capT, capNormal))
+            {
+                if (capT < bestT)
+                {
+                    bestT = capT;
+                    bestPoint = origin + d * capT;
+                    bestNormal = capNormal;
+                    found = true;
+                }
+            }
+
+            if (!found)
                 return false;
 
             outHit.hit = true;
-            outHit.t = tRay;
-            outHit.point = closest;
-            Vec3 n = closest - c;
-            outHit.normal = (n.sqrMagnitude() > 1e-6f) ? n.normalized() : d * -1.0f;
+            outHit.t = bestT;
+            outHit.point = bestPoint;
+            outHit.normal = bestNormal;
             return true;
         }
     }

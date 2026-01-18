@@ -316,7 +316,7 @@ void GameServer::handleJoinRequest(uint32_t connectionId, const proto::Message& 
     // 简单起见，先使用一组通用配置；后续可根据 heroId 做表驱动
     hero::HeroConfig heroCfg{};
     heroCfg.MaxHp                        = 200.0f;
-    heroCfg.ViewHeight                   = 1.654f;
+    heroCfg.ViewHeight                   = 0.827f;
     heroCfg.Gravity                      = 20.0f;
     heroCfg.MinPitch                     = -89.0f;
     heroCfg.MaxPitch                     =  89.0f;
